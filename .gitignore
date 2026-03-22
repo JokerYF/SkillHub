@@ -109,3 +109,4 @@ docs/
 
 # Claude configuration (personal preferences)
 .claude/
+CLAUDE.md
