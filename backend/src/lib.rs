@@ -5,4 +5,5 @@ pub mod models;
 pub mod repos;
 pub mod services;
 pub mod state;
+pub mod storage;
 pub mod utils;

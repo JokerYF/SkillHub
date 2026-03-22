@@ -7,6 +7,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use skillhub_backend::api;
 use skillhub_backend::config::Config;
 use skillhub_backend::state::AppState;
+use skillhub_backend::storage::Storage;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -30,6 +31,17 @@ async fn main() -> anyhow::Result<()> {
         .await?;
     tracing::info!("Database connected");
 
+    // 初始化 MinIO 存储
+    tracing::info!("Connecting to MinIO...");
+    let storage = Storage::new(
+        &config.minio_endpoint,
+        &config.minio_access_key,
+        &config.minio_secret_key,
+        &config.minio_bucket,
+    )
+    .await?;
+    tracing::info!("MinIO connected");
+
     // 配置 CORS（从环境变量读取允许的来源）
     let allowed_origins: Vec<String> = std::env::var("CORS_ORIGINS")
         .unwrap_or_else(|_| "http://localhost:5173,http://localhost:3000".into())
@@ -41,6 +53,7 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState {
         db: db.clone(),
         jwt_secret: config.jwt_secret.clone(),
+        storage,
     };
 
     // 构建路由

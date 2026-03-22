@@ -1,18 +1,25 @@
 use anyhow::{anyhow, Result};
+use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::models::skill::{CreateSkill, CreateSkillTag, CreateSkillVersion, Skill, SkillTag, SkillTagResponse, SkillVersion, SkillManifest, UpdateSkill};
 use crate::repos::skill::SkillRepo;
+use crate::storage::Storage;
+
+/// Content size threshold for storing in MinIO (10KB)
+const MINIO_THRESHOLD: usize = 10 * 1024;
 
 pub struct SkillService {
     skill_repo: SkillRepo,
+    storage: Storage,
 }
 
 impl SkillService {
-    pub fn new(pool: PgPool) -> Self {
+    pub fn new(pool: PgPool, storage: Storage) -> Self {
         Self {
             skill_repo: SkillRepo::new(pool),
+            storage,
         }
     }
 
@@ -34,10 +41,19 @@ impl SkillService {
     pub async fn get_version(&self, slug: &str, tag: &str) -> Result<(Skill, SkillVersion)> {
         let skill = self.get_by_slug(slug).await?;
 
-        let version = self.skill_repo
+        let mut version = self.skill_repo
             .resolve_version(skill.id, tag)
             .await?
             .ok_or_else(|| anyhow!("版本或标签 '{}' 不存在", tag))?;
+
+        // If content is not in DB, fetch from MinIO
+        if version.content.is_none() && version.storage_path.starts_with("skills/") {
+            let content = self.storage
+                .download_skill_content(skill.id, &version.version)
+                .await?
+                .ok_or_else(|| anyhow!("版本内容在存储中不存在"))?;
+            version.content = Some(content);
+        }
 
         Ok((skill, version))
     }
@@ -141,7 +157,41 @@ impl SkillService {
             return Err(anyhow!("版本 {} 已存在", payload.version));
         }
 
-        let version = self.skill_repo.create_version(skill.id, author_id, &payload).await?;
+        // Calculate content hash
+        let mut hasher = Sha256::new();
+        hasher.update(payload.content.as_bytes());
+        let digest = format!("{:x}", hasher.finalize());
+
+        // Determine storage strategy based on content size
+        let content_bytes = payload.content.as_bytes();
+        let content_len = content_bytes.len();
+        let (content, storage_path) = if content_len > MINIO_THRESHOLD {
+            // Store in MinIO for large content
+            let path = self.storage
+                .upload_skill_content(skill.id, &payload.version, &payload.content)
+                .await?;
+            tracing::info!(
+                "Stored skill {} version {} in MinIO ({} bytes)",
+                skill.id, payload.version, content_len
+            );
+            (None, path)
+        } else {
+            // Store in database for small content
+            let path = format!("db://skills/{}/versions/{}", skill.id, payload.version);
+            (Some(payload.content.clone()), path)
+        };
+
+        let version = self.skill_repo
+            .create_version(
+                skill.id,
+                author_id,
+                &payload.version,
+                content.as_deref(),
+                &storage_path,
+                payload.changelog.as_deref(),
+                &digest,
+            )
+            .await?;
 
         // 如果是第一个版本，自动创建 latest 标签
         let versions = self.skill_repo.list_versions(skill.id).await?;

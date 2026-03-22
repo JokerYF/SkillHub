@@ -184,13 +184,26 @@ impl SkillRepo {
 
     // ==================== 版本管理 ====================
 
-    pub async fn create_version(&self, skill_id: Uuid, created_by: Uuid, payload: &CreateSkillVersion) -> Result<SkillVersion> {
-        // 计算内容哈希
-        let mut hasher = Sha256::new();
-        hasher.update(payload.content.as_bytes());
-        let digest = format!("{:x}", hasher.finalize());
-        let storage_path = format!("skills/{}/versions/{}", skill_id, payload.version);
-
+    /// Create a new skill version
+    ///
+    /// # Arguments
+    /// * `skill_id` - The skill UUID
+    /// * `created_by` - The user creating the version
+    /// * `version` - Version string (e.g., "v1.0.0")
+    /// * `content` - Optional content (None if stored in MinIO)
+    /// * `storage_path` - Path where content is stored
+    /// * `changelog` - Optional changelog
+    /// * `digest` - Content hash
+    pub async fn create_version(
+        &self,
+        skill_id: Uuid,
+        created_by: Uuid,
+        version: &str,
+        content: Option<&str>,
+        storage_path: &str,
+        changelog: Option<&str>,
+        digest: &str,
+    ) -> Result<SkillVersion> {
         let version = sqlx::query_as::<_, SkillVersion>(
             r#"
             INSERT INTO skill_versions (skill_id, version, storage_path, content, changelog, digest, created_by)
@@ -199,18 +212,18 @@ impl SkillRepo {
             "#
         )
         .bind(skill_id)
-        .bind(&payload.version)
-        .bind(&storage_path)
-        .bind(&payload.content)
-        .bind(&payload.changelog)
-        .bind(&digest)
+        .bind(version)
+        .bind(storage_path)
+        .bind(content)
+        .bind(changelog)
+        .bind(digest)
         .bind(created_by)
         .fetch_one(&self.pool)
         .await?;
 
-        // 更新技能版本号
+        // Update skill version number
         sqlx::query("UPDATE skills SET version = $1, updated_at = NOW() WHERE id = $2")
-            .bind(&payload.version)
+            .bind(version.version.clone())
             .bind(skill_id)
             .execute(&self.pool)
             .await?;

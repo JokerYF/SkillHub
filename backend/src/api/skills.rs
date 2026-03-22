@@ -86,7 +86,7 @@ pub async fn list(
     State(state): State<AppState>,
     Query(query): Query<SearchQuery>,
 ) -> Result<Json<Vec<Skill>>, ApiError> {
-    let service = SkillService::new(state.db);
+    let service = SkillService::new(state.db, state.storage);
 
     let skills = service.list(query.q.as_deref(), query.tags.as_deref(), query.page, query.sort.as_deref()).await?;
 
@@ -97,7 +97,7 @@ pub async fn get_by_slug(
     State(state): State<AppState>,
     Path(slug): Path<String>,
 ) -> Result<Json<Skill>, ApiError> {
-    let service = SkillService::new(state.db);
+    let service = SkillService::new(state.db, state.storage);
 
     let skill = service.get_by_slug(&slug).await?;
 
@@ -111,7 +111,7 @@ pub async fn get_by_tag(
     State(state): State<AppState>,
     Path((slug, tag)): Path<(String, String)>,
 ) -> Result<Json<SkillVersionResponse>, ApiError> {
-    let service = SkillService::new(state.db);
+    let service = SkillService::new(state.db, state.storage);
 
     let (skill, version) = service.get_version(&slug, &tag).await?;
 
@@ -132,7 +132,7 @@ pub async fn create(
     AuthUser(user): AuthUser,
     Json(payload): Json<CreateSkillRequest>,
 ) -> Result<(StatusCode, Json<Skill>), ApiError> {
-    let service = SkillService::new(state.db);
+    let service = SkillService::new(state.db, state.storage);
 
     // 验证输入
     if payload.name.is_empty() || payload.name.len() > 100 {
@@ -165,7 +165,7 @@ pub async fn update(
     Path(slug): Path<String>,
     Json(payload): Json<UpdateSkillRequest>,
 ) -> Result<Json<Skill>, ApiError> {
-    let service = SkillService::new(state.db);
+    let service = SkillService::new(state.db, state.storage);
 
     let update_skill = UpdateSkill {
         name: payload.name,
@@ -188,7 +188,7 @@ pub async fn delete_skill(
     AuthUser(user): AuthUser,
     Path(slug): Path<String>,
 ) -> Result<StatusCode, ApiError> {
-    let service = SkillService::new(state.db);
+    let service = SkillService::new(state.db, state.storage);
 
     // 从 JWT 获取实际用户 ID
     let author_id = user.id;
@@ -204,7 +204,7 @@ pub async fn list_versions(
     State(state): State<AppState>,
     Path(slug): Path<String>,
 ) -> Result<Json<Vec<SkillVersion>>, ApiError> {
-    let service = SkillService::new(state.db);
+    let service = SkillService::new(state.db, state.storage);
 
     let versions = service.list_versions(&slug).await?;
 
@@ -217,7 +217,7 @@ pub async fn create_version(
     Path(slug): Path<String>,
     Json(payload): Json<CreateVersionRequest>,
 ) -> Result<(StatusCode, Json<SkillVersion>), ApiError> {
-    let service = SkillService::new(state.db);
+    let service = SkillService::new(state.db, state.storage);
 
     let create_version = CreateSkillVersion {
         version: payload.version,
@@ -239,7 +239,7 @@ pub async fn list_tags(
     State(state): State<AppState>,
     Path(slug): Path<String>,
 ) -> Result<Json<Vec<SkillTagResponse>>, ApiError> {
-    let service = SkillService::new(state.db);
+    let service = SkillService::new(state.db, state.storage);
 
     let tags = service.list_tags_with_version(&slug).await?;
 
@@ -252,7 +252,7 @@ pub async fn create_tag(
     Path(slug): Path<String>,
     Json(payload): Json<CreateTagRequest>,
 ) -> Result<Json<SkillTag>, ApiError> {
-    let service = SkillService::new(state.db);
+    let service = SkillService::new(state.db, state.storage);
 
     let create_tag = CreateSkillTag {
         tag: payload.tag,
@@ -272,7 +272,7 @@ pub async fn delete_tag(
     AuthUser(user): AuthUser,
     Path((slug, tag)): Path<(String, String)>,
 ) -> Result<StatusCode, ApiError> {
-    let service = SkillService::new(state.db);
+    let service = SkillService::new(state.db, state.storage);
 
     // 从 JWT 获取实际用户 ID
     let author_id = user.id;
@@ -288,7 +288,7 @@ pub async fn get_manifest(
     State(state): State<AppState>,
     Path(slug): Path<String>,
 ) -> Result<Json<SkillManifest>, ApiError> {
-    let service = SkillService::new(state.db);
+    let service = SkillService::new(state.db, state.storage);
 
     let manifest = service.get_manifest(&slug).await?;
 
