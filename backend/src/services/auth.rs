@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use sqlx::PgPool;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 use crate::models::user::{CreateUser, LoginRequest, User};
 use crate::repos::user::UserRepo;
@@ -23,6 +23,8 @@ impl AuthService {
     }
 
     pub async fn register(&self, payload: CreateUser) -> Result<User> {
+        debug!(username = %payload.username, email = %payload.email, "Processing registration request");
+
         // 检查邮箱是否已存在
         if self.user_repo.find_by_email(&payload.email).await?.is_some() {
             warn!(email = %payload.email, "Registration failed: email already registered");
@@ -41,6 +43,7 @@ impl AuthService {
         }
 
         // 哈希密码
+        debug!(username = %payload.username, "Hashing password");
         let password_hash = hash_password(&payload.password)?;
 
         // 创建用户
@@ -52,6 +55,8 @@ impl AuthService {
     }
 
     pub async fn login(&self, request: LoginRequest) -> Result<String> {
+        debug!(email = %request.email, "Processing login request");
+
         // 查找用户
         let user = self.user_repo
             .find_by_email(&request.email)
@@ -68,6 +73,7 @@ impl AuthService {
         }
 
         // 验证密码
+        debug!(user_id = %user.id, "Verifying password");
         let valid = verify_password(&request.password, &user.password_hash)?;
         if !valid {
             warn!(user_id = %user.id, "Login failed: invalid password");
@@ -78,6 +84,7 @@ impl AuthService {
         self.user_repo.update_last_login(user.id).await?;
 
         // 生成 JWT
+        debug!(user_id = %user.id, role = %user.role, "Generating JWT token");
         let token = create_token(
             &user.id.to_string(),
             &user.role,

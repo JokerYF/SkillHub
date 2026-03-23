@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 use uuid::Uuid;
 
 use crate::models::skill::{CreateSkill, CreateSkillTag, CreateSkillVersion, Skill, SkillTag, SkillTagResponse, SkillVersion, SkillManifest, UpdateSkill};
@@ -28,10 +28,14 @@ impl SkillService {
         let page = page.unwrap_or(1);
         let per_page = 20;
 
+        debug!(query = ?q, tags = ?tags, page = page, sort = ?sort, "Listing skills");
+
         self.skill_repo.list(q, tags, page, per_page, sort).await
     }
 
     pub async fn get_by_slug(&self, slug: &str) -> Result<Skill> {
+        debug!(slug = %slug, "Fetching skill by slug");
+
         self.skill_repo
             .find_by_slug(slug)
             .await?
@@ -40,6 +44,8 @@ impl SkillService {
 
     /// 获取技能的指定版本（支持 tag）
     pub async fn get_version(&self, slug: &str, tag: &str) -> Result<(Skill, SkillVersion)> {
+        debug!(slug = %slug, tag = %tag, "Fetching skill version");
+
         let skill = self.get_by_slug(slug).await?;
 
         let mut version = self.skill_repo
@@ -49,6 +55,7 @@ impl SkillService {
 
         // If content is not in DB, fetch from object storage
         if version.content.is_none() && version.storage_path.starts_with("skills/") {
+            debug!(skill_id = %skill.id, version = %version.version, storage_path = %version.storage_path, "Fetching content from object storage");
             let content = self.storage
                 .download_skill_content(skill.id, &version.version)
                 .await?
@@ -60,6 +67,8 @@ impl SkillService {
     }
 
     pub async fn create(&self, author_id: Uuid, payload: CreateSkill) -> Result<Skill> {
+        debug!(author_id = %author_id, slug = %payload.slug, name = %payload.name, "Creating skill");
+
         // 验证 slug 格式
         if !is_valid_slug(&payload.slug) {
             warn!(slug = %payload.slug, author_id = %author_id, "Skill creation failed: invalid slug format");
@@ -168,6 +177,8 @@ impl SkillService {
     // ==================== 版本管理 ====================
 
     pub async fn create_version(&self, author_id: Uuid, slug: &str, payload: CreateSkillVersion) -> Result<SkillVersion> {
+        debug!(author_id = %author_id, slug = %slug, version = %payload.version, "Creating skill version");
+
         let skill = self.get_by_slug(slug).await?;
 
         if skill.author_id != Some(author_id) {
@@ -188,6 +199,7 @@ impl SkillService {
         }
 
         // Calculate content hash
+        debug!(skill_id = %skill.id, content_len = payload.content.len(), "Calculating content hash");
         let mut hasher = Sha256::new();
         hasher.update(payload.content.as_bytes());
         let digest = format!("{:x}", hasher.finalize());
@@ -197,6 +209,7 @@ impl SkillService {
         let content_len = content_bytes.len();
         let (content, storage_path) = if content_len > STORAGE_THRESHOLD {
             // Store in object storage for large content
+            debug!(skill_id = %skill.id, content_len = content_len, "Storing content in object storage (exceeds threshold)");
             let path = self.storage
                 .upload_skill_content(skill.id, &payload.version, &payload.content)
                 .await?;
@@ -210,6 +223,7 @@ impl SkillService {
             (None, path)
         } else {
             // Store in database for small content
+            debug!(skill_id = %skill.id, content_len = content_len, "Storing content in database (within threshold)");
             let path = format!("db://skills/{}/versions/{}", skill.id, payload.version);
             (Some(payload.content.clone()), path)
         };
@@ -229,6 +243,7 @@ impl SkillService {
         // 如果是第一个版本，自动创建 latest 标签
         let versions = self.skill_repo.list_versions(skill.id).await?;
         if versions.len() == 1 {
+            debug!(skill_id = %skill.id, version_id = %version.id, "Auto-creating 'latest' tag for first version");
             self.skill_repo.create_tag(skill.id, "latest", version.id, author_id).await?;
         }
 
@@ -262,6 +277,8 @@ impl SkillService {
     }
 
     pub async fn create_tag(&self, author_id: Uuid, slug: &str, payload: CreateSkillTag) -> Result<SkillTag> {
+        debug!(author_id = %author_id, slug = %slug, tag = %payload.tag, version = %payload.version, "Creating skill tag");
+
         let skill = self.get_by_slug(slug).await?;
 
         if skill.author_id != Some(author_id) {
@@ -315,6 +332,8 @@ impl SkillService {
     }
 
     pub async fn get_manifest(&self, slug: &str) -> Result<SkillManifest> {
+        debug!(slug = %slug, "Fetching skill manifest");
+
         let skill = self.get_by_slug(slug).await?;
 
         self.skill_repo
