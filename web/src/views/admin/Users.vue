@@ -1,0 +1,315 @@
+<script setup lang="ts">
+/**
+ * Skills Intelligence Hub - Users Admin Page
+ *
+ * User management page with list, role assignment, and enable/disable functionality
+ */
+import { ref, onMounted, computed } from 'vue'
+import { listRoles, type Role } from '@/api/roles'
+import {
+  listUsers,
+  updateUser,
+  assignRole,
+  removeRole,
+  type User,
+} from '@/api/users'
+import { extractErrorMessage } from '@/api/index'
+import Button from '@/design-system/elements/Button/Button.vue'
+import Input from '@/design-system/elements/Input/Input.vue'
+import Tag from '@/design-system/elements/Tag/Tag.vue'
+
+// State
+const users = ref<User[]>([])
+const roles = ref<Role[]>([])
+const loading = ref(true)
+const error = ref('')
+const searchQuery = ref('')
+const selectedUser = ref<User | null>(null)
+const isRoleModalOpen = ref(false)
+const selectedRole = ref('')
+const operationLoading = ref(false)
+
+// Computed
+const filteredUsers = computed(() => {
+  if (!searchQuery.value) return users.value
+  const query = searchQuery.value.toLowerCase()
+  return users.value.filter(
+    (user) =>
+      user.username.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query)
+  )
+})
+
+// Methods
+async function loadData() {
+  loading.value = true
+  error.value = ''
+  try {
+    const [usersData, rolesData] = await Promise.all([listUsers(), listRoles()])
+    users.value = usersData
+    roles.value = rolesData
+  } catch (e) {
+    error.value = extractErrorMessage(e, 'Failed to load data')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function toggleUserStatus(user: User) {
+  try {
+    const updated = await updateUser(user.id, { is_active: !user.is_active })
+    const index = users.value.findIndex((u) => u.id === user.id)
+    if (index !== -1) {
+      users.value[index] = updated
+    }
+  } catch (e) {
+    error.value = extractErrorMessage(e, 'Failed to update user status')
+  }
+}
+
+function openRoleModal(user: User) {
+  selectedUser.value = user
+  isRoleModalOpen.value = true
+}
+
+function closeRoleModal() {
+  selectedUser.value = null
+  isRoleModalOpen.value = false
+  selectedRole.value = ''
+}
+
+async function handleAssignRole() {
+  if (!selectedUser.value || !selectedRole.value) return
+
+  operationLoading.value = true
+  try {
+    await assignRole(selectedUser.value.id, selectedRole.value)
+    // Update local state
+    const index = users.value.findIndex((u) => u.id === selectedUser.value!.id)
+    if (index !== -1 && !users.value[index].roles.includes(selectedRole.value)) {
+      users.value[index].roles.push(selectedRole.value)
+    }
+    closeRoleModal()
+  } catch (e) {
+    error.value = extractErrorMessage(e, 'Failed to assign role')
+  } finally {
+    operationLoading.value = false
+  }
+}
+
+async function handleRemoveRole(user: User, role: string) {
+  try {
+    await removeRole(user.id, role)
+    const index = users.value.findIndex((u) => u.id === user.id)
+    if (index !== -1) {
+      users.value[index].roles = users.value[index].roles.filter((r) => r !== role)
+    }
+  } catch (e) {
+    error.value = extractErrorMessage(e, 'Failed to remove role')
+  }
+}
+
+// Lifecycle
+onMounted(() => {
+  loadData()
+})
+</script>
+
+<template>
+  <div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-neutral-800">User Management</h1>
+        <p class="text-neutral-500 mt-1">Manage users and their roles</p>
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="max-w-md">
+      <Input
+        v-model="searchQuery"
+        placeholder="Search users..."
+        clearable
+      >
+        <template #prefix>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </template>
+      </Input>
+    </div>
+
+    <!-- Error Alert -->
+    <div
+      v-if="error"
+      class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+    >
+      {{ error }}
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-12">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto"></div>
+      <p class="text-neutral-500 mt-4">Loading users...</p>
+    </div>
+
+    <!-- Users Table -->
+    <div v-else class="bg-white rounded-lg border border-neutral-200 overflow-hidden">
+      <table class="min-w-full divide-y divide-neutral-200">
+        <thead class="bg-neutral-50">
+          <tr>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"
+            >
+              User
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"
+            >
+              Email
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"
+            >
+              Roles
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"
+            >
+              Status
+            </th>
+            <th
+              class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-neutral-200">
+          <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-neutral-50">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <div
+                  class="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center"
+                >
+                  <span class="text-brand-600 font-medium">
+                    {{ user.username.charAt(0).toUpperCase() }}
+                  </span>
+                </div>
+                <div class="ml-4">
+                  <div class="text-sm font-medium text-neutral-900">
+                    {{ user.username }}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+              {{ user.email }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex flex-wrap gap-1">
+                <Tag
+                  v-for="role in user.roles"
+                  :key="role"
+                  :closable="role !== 'user'"
+                  @close="handleRemoveRole(user, role)"
+                >
+                  {{ role }}
+                </Tag>
+                <button
+                  @click="openRoleModal(user)"
+                  class="inline-flex items-center px-2 py-1 text-xs text-brand-600 hover:text-brand-700 hover:bg-brand-50 rounded"
+                >
+                  <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add
+                </button>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span
+                :class="[
+                  'px-2 py-1 text-xs font-medium rounded-full',
+                  user.is_active
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700',
+                ]"
+              >
+                {{ user.is_active ? 'Active' : 'Disabled' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <Button
+                :type="user.is_active ? 'danger' : 'success'"
+                size="sm"
+                @click="toggleUserStatus(user)"
+              >
+                {{ user.is_active ? 'Disable' : 'Enable' }}
+              </Button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Empty State -->
+      <div v-if="filteredUsers.length === 0" class="text-center py-12">
+        <p class="text-neutral-500">No users found</p>
+      </div>
+    </div>
+
+    <!-- Role Assignment Modal -->
+    <div
+      v-if="isRoleModalOpen"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+        <h2 class="text-lg font-semibold text-neutral-800 mb-4">Assign Role</h2>
+        <p class="text-neutral-500 mb-4">
+          Select a role to assign to {{ selectedUser?.username }}
+        </p>
+
+        <div class="space-y-2 mb-6">
+          <label
+            v-for="role in roles"
+            :key="role.id"
+            :class="[
+              'flex items-center p-3 border rounded-lg cursor-pointer transition-colors',
+              selectedRole === role.name
+                ? 'border-brand-500 bg-brand-50'
+                : 'border-neutral-200 hover:border-neutral-300',
+            ]"
+          >
+            <input
+              type="radio"
+              :value="role.name"
+              v-model="selectedRole"
+              class="sr-only"
+            />
+            <div class="flex-1">
+              <div class="font-medium text-neutral-800">{{ role.name }}</div>
+              <div class="text-sm text-neutral-500">{{ role.description }}</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="flex justify-end gap-3">
+          <Button type="secondary" @click="closeRoleModal">Cancel</Button>
+          <Button
+            :disabled="!selectedRole || operationLoading"
+            :loading="operationLoading"
+            @click="handleAssignRole"
+          >
+            Assign
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

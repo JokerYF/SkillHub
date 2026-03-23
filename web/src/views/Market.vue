@@ -3,8 +3,10 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { listSkills, type Skill, type SkillListParams } from '@/api/skills'
 import { extractErrorMessage } from '@/api/index'
+import AppLayout from '@/design-system/layouts/AppLayout.vue'
 import SkillCard from '@/components/SkillCard.vue'
 import SearchBar from '@/components/SearchBar.vue'
+import Button from '@/design-system/elements/Button/Button.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -16,18 +18,18 @@ const loading = ref(true)
 const loadingMore = ref(false)
 const error = ref('')
 
-// 搜索和筛选
+// Search and filter state
 const searchQuery = ref('')
 const selectedTag = ref('')
 const currentPage = ref(1)
 const pageSize = 12
 const hasMore = ref(true)
 
-// 从 URL 同步参数
+// Sync from URL
 const urlQuery = computed(() => route.query.q as string || '')
 const urlTag = computed(() => route.query.tag as string || '')
 
-// 获取所有可用标签
+// Get all available tags
 const availableTags = computed(() => {
   const tagSet = new Set<string>()
   allSkills.value.forEach(skill => {
@@ -36,11 +38,11 @@ const availableTags = computed(() => {
   return Array.from(tagSet).sort()
 })
 
-// 当前显示的技能列表（搜索/筛选结果）
+// Currently displayed skills (search/filter results)
 const displayedSkills = computed(() => {
   let result = allSkills.value
 
-  // 按搜索词筛选
+  // Filter by search query
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     result = result.filter(skill =>
@@ -50,7 +52,7 @@ const displayedSkills = computed(() => {
     )
   }
 
-  // 按标签筛选
+  // Filter by tag
   if (selectedTag.value) {
     result = result.filter(skill => skill.tags?.includes(selectedTag.value))
   }
@@ -58,7 +60,7 @@ const displayedSkills = computed(() => {
   return result
 })
 
-// 是否显示精选区域
+// Whether to show featured sections
 const showFeatured = computed(() => {
   return !searchQuery.value && !selectedTag.value
 })
@@ -77,7 +79,6 @@ async function loadSkills(append = false) {
       page_size: pageSize,
     }
 
-    // 加载全部技能用于本地筛选（后续可改为服务端筛选）
     const skills = await listSkills(params)
 
     if (append) {
@@ -85,7 +86,7 @@ async function loadSkills(append = false) {
     } else {
       allSkills.value = skills
 
-      // 设置热门和最新技能
+      // Set popular and latest skills
       popularSkills.value = [...skills]
         .sort((a, b) => b.download_count - a.download_count)
         .slice(0, 6)
@@ -101,7 +102,7 @@ async function loadSkills(append = false) {
 
     hasMore.value = skills.length === pageSize
   } catch (e) {
-    error.value = extractErrorMessage(e, '加载失败')
+    error.value = extractErrorMessage(e, 'Failed to load')
     console.error(e)
   } finally {
     loading.value = false
@@ -112,8 +113,6 @@ async function loadSkills(append = false) {
 function handleSearch(query: string) {
   searchQuery.value = query
   currentPage.value = 1
-
-  // 更新 URL 参数
   updateUrlParams()
 }
 
@@ -142,7 +141,7 @@ async function loadMore() {
   await loadSkills(true)
 }
 
-// 从 URL 初始化筛选条件
+// Initialize filters from URL
 function initFromUrl() {
   if (urlQuery.value) {
     searchQuery.value = urlQuery.value
@@ -152,7 +151,7 @@ function initFromUrl() {
   }
 }
 
-// 监听 URL 变化
+// Watch URL changes
 watch([urlQuery, urlTag], ([newQuery, newTag]) => {
   searchQuery.value = newQuery
   selectedTag.value = newTag
@@ -165,133 +164,132 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- 页面标题 -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-4">技能市场</h1>
-      <SearchBar @search="handleSearch" :initial-query="urlQuery" />
-    </div>
-
-    <!-- 标签筛选 -->
-    <div v-if="availableTags.length > 0" class="mb-6">
-      <div class="flex flex-wrap gap-2">
-        <button
-          v-for="tag in availableTags"
-          :key="tag"
-          @click="handleTagSelect(tag)"
-          :class="[
-            'px-3 py-1 rounded-full text-sm transition-colors',
-            selectedTag === tag
-              ? 'bg-indigo-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          ]"
-        >
-          {{ tag }}
-        </button>
+  <AppLayout title="Skills Market">
+    <div class="max-w-7xl mx-auto">
+      <!-- Page Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-neutral-900 mb-4">Skills Market</h1>
+        <SearchBar @search="handleSearch" :initial-query="urlQuery" />
       </div>
-    </div>
 
-    <!-- 加载状态 -->
-    <div v-if="loading" class="text-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-      <p class="text-gray-500 mt-4">加载中...</p>
-    </div>
-
-    <!-- 错误状态 -->
-    <div v-else-if="error" class="text-center py-12">
-      <p class="text-red-500">{{ error }}</p>
-      <button
-        @click="loadSkills()"
-        class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-      >
-        重试
-      </button>
-    </div>
-
-    <!-- 精选区域：热门和最新技能 -->
-    <template v-else-if="showFeatured">
-      <!-- 热门技能 -->
-      <section v-if="popularSkills.length > 0" class="mb-12">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-          <svg class="w-5 h-5 mr-2 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" />
-          </svg>
-          热门技能
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <SkillCard v-for="skill in popularSkills" :key="skill.id" :skill="skill" />
-        </div>
-      </section>
-
-      <!-- 最新技能 -->
-      <section v-if="latestSkills.length > 0" class="mb-12">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-          <svg class="w-5 h-5 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-          </svg>
-          最新发布
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <SkillCard v-for="skill in latestSkills" :key="skill.id" :skill="skill" />
-        </div>
-      </section>
-
-      <!-- 全部技能 -->
-      <section v-if="allSkills.length > 0">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">全部技能</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <SkillCard v-for="skill in allSkills" :key="skill.id" :skill="skill" />
-        </div>
-      </section>
-
-      <!-- 空状态 -->
-      <div v-if="allSkills.length === 0" class="text-center py-12">
-        <p class="text-gray-500">暂无技能</p>
-      </div>
-    </template>
-
-    <!-- 搜索/筛选结果 -->
-    <template v-else>
-      <div class="mb-4">
-        <div class="flex items-center justify-between">
-          <p class="text-gray-600">
-            找到 <span class="font-semibold">{{ displayedSkills.length }}</span> 个技能
-            <template v-if="searchQuery">，搜索 "{{ searchQuery }}"</template>
-            <template v-if="selectedTag">，标签 "{{ selectedTag }}"</template>
-          </p>
+      <!-- Tag Filters -->
+      <div v-if="availableTags.length > 0" class="mb-6">
+        <div class="flex flex-wrap gap-2">
           <button
-            @click="clearFilters"
-            class="text-indigo-600 hover:text-indigo-800 text-sm"
+            v-for="tag in availableTags"
+            :key="tag"
+            @click="handleTagSelect(tag)"
+            :class="[
+              'px-3 py-1 rounded-full text-sm transition-colors',
+              selectedTag === tag
+                ? 'bg-brand-500 text-white'
+                : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+            ]"
           >
-            清除筛选
+            {{ tag }}
           </button>
         </div>
       </div>
 
-      <div v-if="displayedSkills.length === 0" class="text-center py-12">
-        <p class="text-gray-500">没有找到匹配的技能</p>
-        <button
-          @click="clearFilters"
-          class="mt-4 text-indigo-600 hover:text-indigo-800"
-        >
-          查看全部技能
-        </button>
+      <!-- Loading State -->
+      <div v-if="loading" class="text-center py-12">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto"></div>
+        <p class="text-neutral-500 mt-4">Loading...</p>
       </div>
 
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <SkillCard v-for="skill in displayedSkills" :key="skill.id" :skill="skill" />
+      <!-- Error State -->
+      <div v-else-if="error" class="text-center py-12">
+        <p class="text-red-500">{{ error }}</p>
+        <Button type="primary" class="mt-4" @click="loadSkills()">
+          Retry
+        </Button>
       </div>
 
-      <!-- 加载更多 -->
-      <div v-if="hasMore" class="text-center mt-8">
-        <button
-          @click="loadMore"
-          :disabled="loadingMore"
-          class="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:opacity-50"
-        >
-          {{ loadingMore ? '加载中...' : '加载更多' }}
-        </button>
-      </div>
-    </template>
-  </div>
+      <!-- Featured Section: Popular and Latest Skills -->
+      <template v-else-if="showFeatured">
+        <!-- Popular Skills -->
+        <section v-if="popularSkills.length > 0" class="mb-12">
+          <h2 class="text-xl font-semibold text-neutral-900 mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" />
+            </svg>
+            Popular Skills
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <SkillCard v-for="skill in popularSkills" :key="skill.id" :skill="skill" />
+          </div>
+        </section>
+
+        <!-- Latest Skills -->
+        <section v-if="latestSkills.length > 0" class="mb-12">
+          <h2 class="text-xl font-semibold text-neutral-900 mb-4 flex items-center">
+            <svg class="w-5 h-5 mr-2 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+            </svg>
+            Latest Releases
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <SkillCard v-for="skill in latestSkills" :key="skill.id" :skill="skill" />
+          </div>
+        </section>
+
+        <!-- All Skills -->
+        <section v-if="allSkills.length > 0">
+          <h2 class="text-xl font-semibold text-neutral-900 mb-4">All Skills</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <SkillCard v-for="skill in allSkills" :key="skill.id" :skill="skill" />
+          </div>
+        </section>
+
+        <!-- Empty State -->
+        <div v-if="allSkills.length === 0" class="text-center py-12">
+          <p class="text-neutral-500">No skills available</p>
+        </div>
+      </template>
+
+      <!-- Search/Filter Results -->
+      <template v-else>
+        <div class="mb-4">
+          <div class="flex items-center justify-between">
+            <p class="text-neutral-600">
+              Found <span class="font-semibold">{{ displayedSkills.length }}</span> skills
+              <template v-if="searchQuery">, searching "{{ searchQuery }}"</template>
+              <template v-if="selectedTag">, tag "{{ selectedTag }}"</template>
+            </p>
+            <button
+              @click="clearFilters"
+              class="text-brand-500 hover:text-brand-700 text-sm"
+            >
+              Clear filters
+            </button>
+          </div>
+        </div>
+
+        <div v-if="displayedSkills.length === 0" class="text-center py-12">
+          <p class="text-neutral-500">No matching skills found</p>
+          <button
+            @click="clearFilters"
+            class="mt-4 text-brand-500 hover:text-brand-700"
+          >
+            View all skills
+          </button>
+        </div>
+
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <SkillCard v-for="skill in displayedSkills" :key="skill.id" :skill="skill" />
+        </div>
+
+        <!-- Load More -->
+        <div v-if="hasMore" class="text-center mt-8">
+          <Button
+            type="secondary"
+            :loading="loadingMore"
+            @click="loadMore"
+          >
+            {{ loadingMore ? 'Loading...' : 'Load More' }}
+          </Button>
+        </div>
+      </template>
+    </div>
+  </AppLayout>
 </template>

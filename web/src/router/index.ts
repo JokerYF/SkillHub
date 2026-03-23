@@ -2,17 +2,61 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
 const routes = [
-  { path: '/login', name: 'Login', component: () => import('@/views/Login.vue') },
-  { path: '/register', name: 'Register', component: () => import('@/views/Register.vue') },
-  { path: '/', name: 'Market', component: () => import('@/views/Market.vue') },
-  { path: '/skill/:slug', name: 'SkillDetail', component: () => import('@/views/SkillDetail.vue') },
+  // Auth routes - use AuthLayout
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/Login.vue'),
+    meta: { layout: 'auth' }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/Register.vue'),
+    meta: { layout: 'auth' }
+  },
+
+  // Main routes - use AppLayout
+  {
+    path: '/',
+    name: 'Market',
+    component: () => import('@/views/Market.vue'),
+    meta: { layout: 'app' }
+  },
+  {
+    path: '/skill/:slug',
+    name: 'SkillDetail',
+    component: () => import('@/views/SkillDetail.vue'),
+    meta: { layout: 'app' }
+  },
+
+  // Admin routes - use AppLayout with sidebar
   {
     path: '/admin',
     name: 'Admin',
     component: () => import('@/views/Admin.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, layout: 'admin' }
   },
-  // 404 处理
+  {
+    path: '/admin/users',
+    name: 'AdminUsers',
+    component: () => import('@/views/admin/Users.vue'),
+    meta: { requiresAuth: true, layout: 'admin' }
+  },
+  {
+    path: '/admin/groups',
+    name: 'AdminGroups',
+    component: () => import('@/views/admin/Groups.vue'),
+    meta: { requiresAuth: true, layout: 'admin' }
+  },
+  {
+    path: '/admin/roles',
+    name: 'AdminRoles',
+    component: () => import('@/views/admin/Roles.vue'),
+    meta: { requiresAuth: true, layout: 'admin' }
+  },
+
+  // 404 handling
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
@@ -21,19 +65,19 @@ export const router = createRouter({
   routes,
 })
 
-// 路由守卫
+// Route guard
 router.beforeEach(async (to, _from, next) => {
   const userStore = useUserStore()
 
-  // 检查是否需要认证
+  // Check if authentication is required
   if (to.meta.requiresAuth) {
     if (!userStore.isTokenValid()) {
-      // 保存目标路径，登录后重定向
+      // Save target path for redirect after login
       next({ name: 'Login', query: { redirect: to.fullPath } })
       return
     }
 
-    // 如果有 token 但没有用户信息，尝试获取
+    // If token exists but no user info, try to fetch
     if (!userStore.user) {
       try {
         await userStore.fetchUser()
@@ -44,7 +88,7 @@ router.beforeEach(async (to, _from, next) => {
     }
   }
 
-  // 已登录用户访问登录/注册页，重定向到首页
+  // Logged in user accessing login/register pages, redirect to home
   if ((to.name === 'Login' || to.name === 'Register') && userStore.isTokenValid()) {
     next({ name: 'Market' })
     return

@@ -3,6 +3,9 @@ import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { extractErrorMessage } from '@/api/index'
+import AuthLayout from '@/design-system/layouts/AuthLayout.vue'
+import Button from '@/design-system/elements/Button/Button.vue'
+import Input from '@/design-system/elements/Input/Input.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -16,12 +19,12 @@ async function handleLogin() {
   error.value = ''
 
   if (!email.value || !email.value.includes('@')) {
-    error.value = '请输入有效的邮箱地址'
+    error.value = 'Please enter a valid email address'
     return
   }
 
   if (password.value.length < 8) {
-    error.value = '密码长度至少为 8 位'
+    error.value = 'Password must be at least 8 characters'
     return
   }
 
@@ -31,73 +34,64 @@ async function handleLogin() {
       password: password.value,
     })
 
-    // 重定向到原目标页面或首页
+    // Redirect to original target page or home
     const redirect = route.query.redirect as string
     router.push(redirect || '/')
   } catch (e) {
-    error.value = extractErrorMessage(e, '登录失败')
+    error.value = extractErrorMessage(e, 'Login failed')
   }
 }
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          登录账户
-        </h2>
+  <AuthLayout title="Welcome Back" subtitle="Sign in to your account">
+    <form class="space-y-6" @submit.prevent="handleLogin">
+      <!-- Error Message -->
+      <div
+        v-if="error"
+        class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"
+      >
+        {{ error }}
       </div>
 
-      <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
-        <div v-if="error" class="bg-red-50 text-red-500 p-3 rounded-md text-sm">
-          {{ error }}
-        </div>
+      <!-- Success Message from Registration -->
+      <div
+        v-if="route.query.registered === 'true'"
+        class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm"
+      >
+        Registration successful! Please log in.
+      </div>
 
-        <div class="rounded-md shadow-sm -space-y-px">
-          <div>
-            <label for="email" class="sr-only">邮箱</label>
-            <input
-              id="email"
-              v-model="email"
-              name="email"
-              type="email"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="邮箱地址"
-            />
-          </div>
-          <div>
-            <label for="password" class="sr-only">密码</label>
-            <input
-              id="password"
-              v-model="password"
-              name="password"
-              type="password"
-              required
-              minlength="8"
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="密码（至少8位）"
-            />
-          </div>
-        </div>
+      <!-- Email Input -->
+      <Input
+        v-model="email"
+        label="Email"
+        type="email"
+        placeholder="Enter your email"
+        required
+        :state="error && !email.includes('@') ? 'error' : 'default'"
+      />
 
-        <div>
-          <button
-            type="submit"
-            :disabled="userStore.loading"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-          >
-            {{ userStore.loading ? '登录中...' : '登录' }}
-          </button>
-        </div>
+      <!-- Password Input -->
+      <Input
+        v-model="password"
+        label="Password"
+        type="password"
+        placeholder="Enter your password"
+        required
+        show-password
+        hint="At least 8 characters"
+      />
 
-        <div class="text-center">
-          <router-link to="/register" class="text-indigo-600 hover:text-indigo-500 text-sm">
-            没有账户？立即注册
-          </router-link>
-        </div>
-      </form>
-    </div>
-  </div>
+      <!-- Submit Button -->
+      <Button
+        type="primary"
+        block
+        :loading="userStore.loading"
+        native-type="submit"
+      >
+        {{ userStore.loading ? 'Signing in...' : 'Sign In' }}
+      </Button>
+    </form>
+  </AuthLayout>
 </template>
