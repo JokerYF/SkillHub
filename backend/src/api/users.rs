@@ -7,7 +7,9 @@ use axum::{
 use serde::Serialize;
 
 use crate::middleware::auth::AuthUser;
+use crate::models::skill::Skill;
 use crate::models::user::User;
+use crate::repos::skill::SkillRepo;
 use crate::services::auth::AuthService;
 use crate::state::AppState;
 use crate::utils::error::ApiError;
@@ -24,6 +26,7 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/users/me", get(get_current_user))
         .route("/users/me/profile", get(get_my_profile))
+        .route("/users/me/skills", get(get_my_skills))
 }
 
 pub async fn get_current_user(
@@ -65,4 +68,15 @@ pub async fn get_my_profile(
     let user = service.get_user_by_id(current_user.id).await?;
 
     Ok(Json(user))
+}
+
+/// 获取当前用户创建的技能列表
+pub async fn get_my_skills(
+    State(state): State<AppState>,
+    AuthUser(current_user): AuthUser,
+) -> Result<Json<Vec<Skill>>, ApiError> {
+    let repo = SkillRepo::new(state.db);
+    let skills = repo.find_by_author(current_user.id).await?;
+
+    Ok(Json(skills))
 }
