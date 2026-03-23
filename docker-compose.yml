@@ -59,6 +59,7 @@ services:
       SERVER_PORT: 3000
       RUST_LOG: ${RUST_LOG:-info}
       LOG_FORMAT: ${LOG_FORMAT:-pretty}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000,http://115.190.114.160:5173}
       STORAGE_ENDPOINT: http://rustfs:9000
       STORAGE_ACCESS_KEY: skillhub
       STORAGE_SECRET_KEY: skillhub123
