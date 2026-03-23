@@ -6,7 +6,7 @@ const props = defineProps<{
     id: string
     name: string
     slug: string
-    description: string
+    description?: string
     version: string
     tags: string[]
     download_count: number

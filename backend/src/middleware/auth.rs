@@ -1,10 +1,12 @@
 use axum::{
-    extract::FromRef,
+    async_trait,
+    extract::{FromRef, FromRequestParts},
     http::request::Parts,
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::state::AppState;
 use crate::utils::error::ApiError;
 use crate::utils::jwt;
 
@@ -20,16 +22,13 @@ pub struct CurrentUser {
 pub struct AuthUser(pub CurrentUser);
 
 /// 从请求中提取用户身份
-impl<S> FromRequestParts<S> for AuthUser
-where
-    String: FromRef<S>,
-    S: Send + Sync,
-{
+#[async_trait]
+impl FromRequestParts<AppState> for AuthUser {
     type Rejection = ApiError;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
         // 从 State 中获取 JWT 密钥
-        let jwt_secret = String::from_ref(state);
+        let jwt_secret = &state.jwt_secret;
 
         // 从 Authorization header 中提取 token
         let auth_header = parts
@@ -50,7 +49,7 @@ where
         };
 
         // 验证 JWT
-        let claims = jwt::verify_token(token, &jwt_secret)
+        let claims = jwt::verify_token(token, jwt_secret)
             .map_err(|_| ApiError::Unauthorized)?;
 
         // 解析用户 ID
@@ -68,18 +67,13 @@ where
 #[derive(Debug, Clone)]
 pub struct OptionalAuthUser(pub Option<CurrentUser>);
 
-impl<S> FromRequestParts<S> for OptionalAuthUser
-where
-    String: FromRef<S>,
-    S: Send + Sync,
-{
+#[async_trait]
+impl FromRequestParts<AppState> for OptionalAuthUser {
     type Rejection = ApiError;
 
-    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
         // 尝试提取用户身份，但不强制要求认证
-        let auth_user = AuthUser::from_request_parts(parts, state).await;
-
-        match auth_user {
+        match AuthUser::from_request_parts(parts, state).await {
             Ok(AuthUser(user)) => Ok(OptionalAuthUser(Some(user))),
             Err(_) => Ok(OptionalAuthUser(None)),
         }

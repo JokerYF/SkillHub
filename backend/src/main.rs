@@ -67,8 +67,8 @@ async fn main() -> anyhow::Result<()> {
                         .map(|o| allowed_origins.contains(&o.to_string()))
                         .unwrap_or(false)
                 }))
-                .allow_methods([hyper::Method::GET, hyper::Method::POST, hyper::Method::PUT, hyper::Method::DELETE])
-                .allow_headers([hyper::header::AUTHORIZATION, hyper::header::CONTENT_TYPE])
+                .allow_methods([axum::http::Method::GET, axum::http::Method::POST, axum::http::Method::PUT, axum::http::Method::DELETE])
+                .allow_headers([axum::http::header::AUTHORIZATION, axum::http::header::CONTENT_TYPE])
         )
         .with_state(state);
 
