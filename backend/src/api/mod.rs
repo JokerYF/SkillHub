@@ -1,4 +1,6 @@
 pub mod auth;
+pub mod groups;
+pub mod roles;
 pub mod skills;
 pub mod users;
 
@@ -10,4 +12,6 @@ pub fn routes() -> Router<AppState> {
         .merge(auth::routes())
         .merge(skills::routes())
         .merge(users::routes())
+        .merge(roles::routes())
+        .merge(groups::routes())
 }
