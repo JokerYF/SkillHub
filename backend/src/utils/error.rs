@@ -115,7 +115,10 @@ impl From<anyhow::Error> for ApiError {
         // 检查是否是业务错误（通过错误消息判断）
         let msg = err.to_string();
 
-        if msg.contains("已被") || msg.contains("不存在") || msg.contains("无效") {
+        // 认证相关错误返回 401 Unauthorized
+        if msg.contains("邮箱或密码错误") || msg.contains("账户已被禁用") {
+            ApiError::Unauthorized
+        } else if msg.contains("已被") || msg.contains("不存在") || msg.contains("无效") {
             ApiError::BadRequest(msg)
         } else if msg.contains("无权") {
             ApiError::Forbidden
