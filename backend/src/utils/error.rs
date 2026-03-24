@@ -26,23 +26,71 @@ struct ErrorDetail {
     message: String,
 }
 
+/// 根据错误消息内容判断具体的错误码
+fn determine_bad_request_code(msg: &str) -> &'static str {
+    let msg_lower = msg.to_lowercase();
+
+    if msg_lower.contains("邮箱") || msg_lower.contains("email") {
+        "EMAIL_REGISTERED"
+    } else if msg_lower.contains("用户名") || msg_lower.contains("username") {
+        "USERNAME_TAKEN"
+    } else if msg_lower.contains("密码") || msg_lower.contains("password") {
+        "INVALID_CREDENTIALS"
+    } else {
+        "BAD_REQUEST"
+    }
+}
+
+/// 根据错误消息内容判断 NotFound 类型的错误码
+fn determine_not_found_code(msg: &str) -> &'static str {
+    let msg_lower = msg.to_lowercase();
+
+    if msg_lower.contains("用户") || msg_lower.contains("user") {
+        "USER_NOT_FOUND"
+    } else {
+        "NOT_FOUND"
+    }
+}
+
+/// 根据错误消息内容判断 Conflict 类型的错误码
+fn determine_conflict_code(msg: &str) -> &'static str {
+    let msg_lower = msg.to_lowercase();
+
+    if msg_lower.contains("邮箱") || msg_lower.contains("email") {
+        "EMAIL_REGISTERED"
+    } else if msg_lower.contains("用户名") || msg_lower.contains("username") {
+        "USERNAME_TAKEN"
+    } else {
+        "CONFLICT"
+    }
+}
+
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        let (status, code, message) = match self {
-            ApiError::BadRequest(msg) => (StatusCode::BAD_REQUEST, "BAD_REQUEST", msg),
-            ApiError::Unauthorized => (StatusCode::UNAUTHORIZED, "UNAUTHORIZED", "未授权，请先登录".into()),
-            ApiError::Forbidden => (StatusCode::FORBIDDEN, "FORBIDDEN", "禁止访问".into()),
-            ApiError::NotFound(msg) => (StatusCode::NOT_FOUND, "NOT_FOUND", msg),
-            ApiError::Conflict(msg) => (StatusCode::CONFLICT, "CONFLICT", msg),
+        let (status, code) = match self {
+            ApiError::BadRequest(msg) => {
+                let code = determine_bad_request_code(&msg);
+                (StatusCode::BAD_REQUEST, code)
+            }
+            ApiError::Unauthorized => (StatusCode::UNAUTHORIZED, "UNAUTHORIZED"),
+            ApiError::Forbidden => (StatusCode::FORBIDDEN, "FORBIDDEN"),
+            ApiError::NotFound(msg) => {
+                let code = determine_not_found_code(&msg);
+                (StatusCode::NOT_FOUND, code)
+            }
+            ApiError::Conflict(msg) => {
+                let code = determine_conflict_code(&msg);
+                (StatusCode::CONFLICT, code)
+            }
             ApiError::InternalServerError => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "服务器内部错误".into())
+                (StatusCode::INTERNAL_SERVER_ERROR, "INTERNAL_ERROR")
             }
         };
 
         let body = Json(ErrorResponse {
             error: ErrorDetail {
-                code: code.into(),
-                message,
+                code: code.to_string(),
+                message: String::new(),
             },
         });
 
