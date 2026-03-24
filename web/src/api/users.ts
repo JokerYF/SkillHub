@@ -41,6 +41,9 @@ export async function deleteUser(id: string): Promise<void> {
  * Assign a role to a user
  * @param userId - The user's UUID
  * @param roleName - The role name (e.g., 'admin', 'user')
+ *
+ * API 使用角色名称（非 UUID）分配角色
+ * 后端接口: POST /users/{id}/roles { "role": "admin" }
  */
 export async function assignRole(userId: string, roleName: string): Promise<void> {
   await api.post(`/users/${userId}/roles`, { role: roleName })
@@ -50,6 +53,9 @@ export async function assignRole(userId: string, roleName: string): Promise<void
  * Remove a role from a user
  * @param userId - The user's UUID
  * @param roleName - The role name (e.g., 'admin', 'user')
+ *
+ * API 使用角色名称（非 UUID）移除角色
+ * 后端接口: DELETE /users/{id}/roles/{role}
  */
 export async function removeRole(userId: string, roleName: string): Promise<void> {
   await api.delete(`/users/${userId}/roles/${roleName}`)

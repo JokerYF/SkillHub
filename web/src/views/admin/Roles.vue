@@ -3,6 +3,17 @@
  * Skills Intelligence Hub - Roles Admin Page
  *
  * Role management page with CRUD operations
+ *
+ * API 状态（参考 docs/api-spec.yaml）:
+ * - GET /roles - 已实现
+ * - POST /roles - 已实现
+ * - GET /roles/{id} - 已实现
+ * - PUT /roles/{id} - 已实现
+ * - DELETE /roles/{id} - 已实现（系统角色不可删除）
+ * - GET /roles/{id}/permissions - 已实现
+ * - POST /roles/{id}/permissions - 已实现
+ * - DELETE /roles/{id}/permissions/{permission_id} - 已实现
+ * - GET /permissions - 已实现
  */
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'

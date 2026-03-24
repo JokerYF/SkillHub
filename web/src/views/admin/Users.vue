@@ -4,12 +4,13 @@
  *
  * User management page with list, role assignment, and enable/disable functionality
  *
- * NOTE: This page requires backend endpoints that are not yet implemented:
- * - GET /users (list all users)
- * - PUT /users/{id} (update user)
- * - DELETE /users/{id} (delete user)
- *
- * The role assignment endpoints exist but require role UUID instead of role name.
+ * API 状态（参考 docs/api-spec.yaml）:
+ * - GET /users - 已实现
+ * - GET /users/{id} - 已实现
+ * - PUT /users/{id} - 已实现
+ * - DELETE /users/{id} - 已实现
+ * - POST /users/{id}/roles - 已实现（使用角色名称，非 UUID）
+ * - DELETE /users/{id}/roles/{role} - 已实现（使用角色名称，非 UUID）
  */
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -112,15 +113,17 @@ async function handleAssignRole() {
 
   operationLoading.value = true
   try {
-    // API expects role UUID, not name
-    await assignRole(selectedUser.value.id, selectedRoleId.value)
-    // Get role name for local state update
+    // API 使用角色名称（非 UUID），需要从 ID 获取名称
     const roleName = roleIdToName.value.get(selectedRoleId.value)
-    if (roleName) {
-      const index = users.value.findIndex((u) => u.id === selectedUser.value!.id)
-      if (index !== -1 && !users.value[index].roles.includes(roleName)) {
-        users.value[index].roles.push(roleName)
-      }
+    if (!roleName) {
+      error.value = 'Cannot find role name'
+      return
+    }
+    await assignRole(selectedUser.value.id, roleName)
+    // 更新本地状态
+    const index = users.value.findIndex((u) => u.id === selectedUser.value!.id)
+    if (index !== -1 && !users.value[index].roles.includes(roleName)) {
+      users.value[index].roles.push(roleName)
     }
     closeRoleModal()
   } catch (e) {
@@ -131,16 +134,9 @@ async function handleAssignRole() {
 }
 
 async function handleRemoveRole(user: User, roleName: string) {
-  // Get role ID from name
-  const roleId = roleNameToId.value.get(roleName)
-  if (!roleId) {
-    error.value = `Cannot find role ID for "${roleName}"`
-    return
-  }
-
   try {
-    // API expects role UUID, not name
-    await removeRole(user.id, roleId)
+    // API 使用角色名称（非 UUID）
+    await removeRole(user.id, roleName)
     const index = users.value.findIndex((u) => u.id === user.id)
     if (index !== -1) {
       users.value[index].roles = users.value[index].roles.filter((r) => r !== roleName)

@@ -4,9 +4,20 @@
  *
  * Department/group management page with tree view, CRUD, and member management
  *
- * NOTE: This page requires GET /users endpoint for listing users to add as members.
- * If that endpoint is not available, the "Add Member" feature will show an error.
- * The member role is mapped to 'is_primary' boolean (admin=true, member=false).
+ * API 状态（参考 docs/api-spec.yaml）:
+ * - GET /groups - 已实现
+ * - POST /groups - 已实现
+ * - GET /groups/tree - 已实现
+ * - GET /groups/{id} - 已实现
+ * - PUT /groups/{id} - 已实现
+ * - DELETE /groups/{id} - 已实现
+ * - GET /groups/{id}/members - 已实现
+ * - POST /groups/{id}/members - 已实现
+ * - DELETE /groups/{id}/members/{user_id} - 已实现
+ * - GET /users/{id}/groups - 已实现
+ *
+ * 依赖：
+ * - GET /users - 已实现（用于成员选择列表）
  */
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'

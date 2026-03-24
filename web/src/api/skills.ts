@@ -123,7 +123,8 @@ export async function getSkillTags(slug: string): Promise<SkillTag[]> {
 }
 
 export async function downloadSkill(slug: string, tag?: string): Promise<Blob> {
-  const url = tag ? `/skills/${slug}/${tag}/download` : `/skills/${slug}/download`
+  // 路由格式: /skills/:slug/download/:tag
+  const url = tag ? `/skills/${slug}/download/${tag}` : `/skills/${slug}/download/latest`
   const { data } = await api.get<Blob>(url, { responseType: 'blob' })
   return data
 }
