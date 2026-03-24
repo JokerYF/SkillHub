@@ -17,6 +17,7 @@ import { extractErrorMessage } from '@/api/index'
 import Button from '@/design-system/elements/Button/Button.vue'
 import Input from '@/design-system/elements/Input/Input.vue'
 import Tag from '@/design-system/elements/Tag/Tag.vue'
+import AppLayout from '@/design-system/layouts/AppLayout.vue'
 
 // State
 const roles = ref<Role[]>([])
@@ -144,7 +145,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <AppLayout title="Role Management" :show-sidebar="true">
+    <div class="space-y-6">
     <!-- Page Header -->
     <div class="flex items-center justify-between">
       <div>
@@ -298,5 +300,5 @@ onMounted(() => {
         </div>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>

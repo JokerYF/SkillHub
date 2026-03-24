@@ -63,9 +63,26 @@ const navItems = [
   { name: 'admin', label: '管理后台', path: '/admin', icon: 'settings', admin: true },
 ]
 
+// Admin 二级菜单项
+const adminSubItems = [
+  { name: 'admin-users', label: '用户管理', path: '/admin/users' },
+  { name: 'admin-groups', label: '组织管理', path: '/admin/groups' },
+  { name: 'admin-roles', label: '角色管理', path: '/admin/roles' },
+]
+
 // 计算当前激活的菜单项
 const activeNavItem = computed(() => {
   return navItems.find(item => item.path === route.path)
+})
+
+// 判断是否在 admin 路由下
+const isAdminRoute = computed(() => {
+  return route.path.startsWith('/admin')
+})
+
+// 计算 admin 二级菜单激活状态
+const activeSubItem = computed(() => {
+  return adminSubItems.find(item => item.path === route.path)
 })
 
 // 退出登录
@@ -240,6 +257,24 @@ const toggleUserMenu = () => {
           <!-- 标签文字 -->
           <span v-if="!sidebarCollapsed" class="ml-3">{{ item.label }}</span>
         </router-link>
+
+        <!-- Admin 二级菜单 -->
+        <div v-if="isAdminRoute && !sidebarCollapsed" class="ml-6 mt-2 space-y-1 border-l border-neutral-200 pl-3">
+          <router-link
+            v-for="subItem in adminSubItems"
+            :key="subItem.name"
+            :to="subItem.path"
+            :class="[
+              'flex items-center px-3 py-2 rounded-lg text-sm transition-colors',
+              activeSubItem?.name === subItem.name
+                ? 'bg-brand-50 text-brand-600'
+                : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700'
+            ]"
+            @click="isMobileMenuOpen = false"
+          >
+            {{ subItem.label }}
+          </router-link>
+        </div>
       </nav>
 
       <!-- 折叠按钮 -->
