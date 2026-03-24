@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   skill: {
@@ -56,7 +59,7 @@ const displayTags = computed(() => {
         </span>
       </div>
 
-      <span class="text-xs text-gray-400">{{ skill.download_count }} 次下载</span>
+      <span class="text-xs text-gray-400">{{ t('skillCard.downloads', { count: skill.download_count }) }}</span>
     </div>
   </router-link>
 </template>

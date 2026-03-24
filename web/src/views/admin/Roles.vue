@@ -5,6 +5,7 @@
  * Role management page with CRUD operations
  */
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   listRoles,
   createRole,
@@ -18,6 +19,8 @@ import Button from '@/design-system/elements/Button/Button.vue'
 import Input from '@/design-system/elements/Input/Input.vue'
 import Tag from '@/design-system/elements/Tag/Tag.vue'
 import AppLayout from '@/design-system/layouts/AppLayout.vue'
+
+const { t } = useI18n()
 
 // State
 const roles = ref<Role[]>([])
@@ -145,13 +148,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppLayout title="Role Management" :show-sidebar="true">
+  <AppLayout :title="t('roles.title')" :show-sidebar="true">
     <div class="space-y-6">
     <!-- Page Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-neutral-800">Role Management</h1>
-        <p class="text-neutral-500 mt-1">Manage roles and permissions</p>
+        <h1 class="text-2xl font-bold text-neutral-800">{{ t('roles.title') }}</h1>
+        <p class="text-neutral-500 mt-1">{{ t('roles.subtitle') }}</p>
       </div>
       <Button @click="openCreateModal">
         <template #icon-left>
@@ -159,7 +162,7 @@ onMounted(() => {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
         </template>
-        Create Role
+        {{ t('roles.createRole') }}
       </Button>
     </div>
 
@@ -174,7 +177,7 @@ onMounted(() => {
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-12">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto"></div>
-      <p class="text-neutral-500 mt-4">Loading roles...</p>
+      <p class="text-neutral-500 mt-4">{{ t('roles.loading') }}</p>
     </div>
 
     <!-- Roles Grid -->
@@ -195,7 +198,7 @@ onMounted(() => {
             <button
               @click="openEditModal(role)"
               class="p-1 text-neutral-400 hover:text-neutral-600 rounded"
-              title="Edit"
+              :title="t('roles.edit')"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -204,7 +207,7 @@ onMounted(() => {
             <button
               @click="handleDelete(role)"
               class="p-1 text-neutral-400 hover:text-red-600 rounded"
-              title="Delete"
+              :title="t('common.delete')"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -214,9 +217,9 @@ onMounted(() => {
         </div>
 
         <div>
-          <h4 class="text-sm font-medium text-neutral-500 mb-2">Permissions</h4>
+          <h4 class="text-sm font-medium text-neutral-500 mb-2">{{ t('roles.permissions') }}</h4>
           <div v-if="role.permissions.length === 0" class="text-sm text-neutral-400">
-            No permissions assigned
+            {{ t('roles.noPermissions') }}
           </div>
           <div v-else class="flex flex-wrap gap-1">
             <Tag v-for="permission in role.permissions" :key="permission" size="sm">
@@ -228,7 +231,7 @@ onMounted(() => {
 
       <!-- Empty State -->
       <div v-if="roles.length === 0" class="col-span-full text-center py-12 text-neutral-500">
-        No roles yet. Click "Create Role" to add one.
+        {{ t('roles.noRoles') }}
       </div>
     </div>
 
@@ -239,32 +242,32 @@ onMounted(() => {
     >
       <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
         <h2 class="text-lg font-semibold text-neutral-800 mb-4">
-          {{ isEditMode ? 'Edit Role' : 'Create Role' }}
+          {{ isEditMode ? t('roles.editRole') : t('roles.createRole') }}
         </h2>
 
         <div class="space-y-4">
           <Input
             v-model="formData.name"
-            label="Name"
+            :label="t('common.name')"
             required
-            placeholder="Role name"
+            :placeholder="t('roles.namePlaceholder')"
           />
           <Input
             v-model="formData.description"
-            label="Description"
-            placeholder="Role description"
+            :label="t('common.description')"
+            :placeholder="t('roles.descPlaceholder')"
           />
 
           <div>
             <label class="block text-sm font-medium text-neutral-700 mb-1">
-              Permissions
+              {{ t('roles.permissions') }}
             </label>
             <div class="flex gap-2 mb-2">
               <select
                 v-model="newPermission"
                 class="flex-1 px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
               >
-                <option value="">Select a permission</option>
+                <option value="">{{ t('roles.selectPermission') }}</option>
                 <option
                   v-for="perm in availablePermissions.filter((p) => !formData.permissions.includes(p))"
                   :key="perm"
@@ -273,7 +276,7 @@ onMounted(() => {
                   {{ perm }}
                 </option>
               </select>
-              <Button type="secondary" size="sm" @click="addPermission">Add</Button>
+              <Button type="secondary" size="sm" @click="addPermission">{{ t('roles.add') }}</Button>
             </div>
             <div v-if="formData.permissions.length > 0" class="flex flex-wrap gap-1">
               <Tag
@@ -289,13 +292,13 @@ onMounted(() => {
         </div>
 
         <div class="flex justify-end gap-3 mt-6">
-          <Button type="secondary" @click="closeModal">Cancel</Button>
+          <Button type="secondary" @click="closeModal">{{ t('common.cancel') }}</Button>
           <Button
             :loading="operationLoading"
             :disabled="!formData.name"
             @click="handleSubmit"
           >
-            {{ isEditMode ? 'Update' : 'Create' }}
+            {{ isEditMode ? t('roles.update') : t('roles.create') }}
           </Button>
         </div>
       </div>

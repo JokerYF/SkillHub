@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   initialQuery?: string
@@ -33,7 +36,7 @@ function clearSearch() {
     <input
       v-model="query"
       type="text"
-      placeholder="搜索技能名称、描述..."
+      :placeholder="t('searchBar.placeholder')"
       class="w-full px-4 py-2 pr-24 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
       @keyup.enter="handleSearch"
     />
@@ -51,7 +54,7 @@ function clearSearch() {
         @click="handleSearch"
         class="px-4 py-1 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700"
       >
-        搜索
+        {{ t('searchBar.search') }}
       </button>
     </div>
   </div>

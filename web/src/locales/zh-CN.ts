@@ -199,9 +199,34 @@ export default {
     namePlaceholder: '角色名称',
     descPlaceholder: '角色描述',
     update: '更新',
+    create: '创建',
+    add: '添加',
+    loading: '加载角色中...',
+    edit: '编辑',
     failedToCreate: '创建角色失败',
     failedToUpdate: '更新角色失败',
     failedToDelete: '删除角色失败',
+  },
+
+  // 搜索栏
+  searchBar: {
+    placeholder: '搜索技能名称、描述...',
+    search: '搜索',
+  },
+
+  // 技能卡片
+  skillCard: {
+    downloads: '{count} 次下载',
+  },
+
+  // 管理面板导航卡片
+  adminNav: {
+    userManagement: '用户管理',
+    userManagementDesc: '管理用户和角色',
+    departmentManagement: '部门管理',
+    departmentManagementDesc: '管理团队和部门',
+    roleManagement: '角色管理',
+    roleManagementDesc: '配置角色和权限',
   },
 
   // API 错误消息（前端显示）

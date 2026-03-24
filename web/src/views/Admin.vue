@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { listMySkills, deleteSkill, type Skill } from '@/api/skills'
 import { extractErrorMessage } from '@/api/index'
 import AppLayout from '@/design-system/layouts/AppLayout.vue'
 import Button from '@/design-system/elements/Button/Button.vue'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 
 const mySkills = ref<Skill[]>([])
@@ -48,30 +50,30 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppLayout title="Admin Panel" :show-sidebar="true">
+  <AppLayout :title="t('admin.title')" :show-sidebar="true">
     <div class="space-y-6">
       <!-- Page Header -->
       <div class="flex justify-between items-center">
         <div>
-          <h1 class="text-2xl font-bold text-neutral-800">Admin Panel</h1>
-          <p class="text-neutral-500 mt-1">Manage your skills and settings</p>
+          <h1 class="text-2xl font-bold text-neutral-800">{{ t('admin.title') }}</h1>
+          <p class="text-neutral-500 mt-1">{{ t('admin.subtitle') }}</p>
         </div>
       </div>
 
       <!-- Account Info Card -->
       <div class="bg-white rounded-lg border border-neutral-200 p-6">
-        <h2 class="text-lg font-semibold text-neutral-800 mb-4">Account Information</h2>
+        <h2 class="text-lg font-semibold text-neutral-800 mb-4">{{ t('admin.accountInfo') }}</h2>
         <div v-if="userStore.user" class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
           <div>
-            <span class="text-neutral-500">Username:</span>
+            <span class="text-neutral-500">{{ t('users.user') }}:</span>
             <span class="ml-2 font-medium text-neutral-800">{{ userStore.user.username }}</span>
           </div>
           <div>
-            <span class="text-neutral-500">Email:</span>
+            <span class="text-neutral-500">{{ t('users.email') }}:</span>
             <span class="ml-2 text-neutral-800">{{ userStore.user.email }}</span>
           </div>
           <div>
-            <span class="text-neutral-500">Role:</span>
+            <span class="text-neutral-500">{{ t('users.roles') }}:</span>
             <span class="ml-2 px-2 py-1 bg-brand-100 text-brand-700 rounded text-xs font-medium">
               {{ userStore.user.role || 'user' }}
             </span>
@@ -92,8 +94,8 @@ onMounted(() => {
               </svg>
             </div>
             <div class="ml-4">
-              <h3 class="font-semibold text-neutral-800">User Management</h3>
-              <p class="text-sm text-neutral-500">Manage users and roles</p>
+              <h3 class="font-semibold text-neutral-800">{{ t('adminNav.userManagement') }}</h3>
+              <p class="text-sm text-neutral-500">{{ t('adminNav.userManagementDesc') }}</p>
             </div>
           </div>
         </router-link>
@@ -109,8 +111,8 @@ onMounted(() => {
               </svg>
             </div>
             <div class="ml-4">
-              <h3 class="font-semibold text-neutral-800">Department Management</h3>
-              <p class="text-sm text-neutral-500">Organize teams and departments</p>
+              <h3 class="font-semibold text-neutral-800">{{ t('adminNav.departmentManagement') }}</h3>
+              <p class="text-sm text-neutral-500">{{ t('adminNav.departmentManagementDesc') }}</p>
             </div>
           </div>
         </router-link>
@@ -126,8 +128,8 @@ onMounted(() => {
               </svg>
             </div>
             <div class="ml-4">
-              <h3 class="font-semibold text-neutral-800">Role Management</h3>
-              <p class="text-sm text-neutral-500">Configure roles and permissions</p>
+              <h3 class="font-semibold text-neutral-800">{{ t('adminNav.roleManagement') }}</h3>
+              <p class="text-sm text-neutral-500">{{ t('adminNav.roleManagementDesc') }}</p>
             </div>
           </div>
         </router-link>
@@ -136,26 +138,26 @@ onMounted(() => {
       <!-- My Skills Section -->
       <div class="bg-white rounded-lg border border-neutral-200 p-6">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-semibold text-neutral-800">My Skills</h2>
+          <h2 class="text-lg font-semibold text-neutral-800">{{ t('admin.mySkills') }}</h2>
           <router-link
             to="/"
             class="text-sm text-brand-500 hover:text-brand-700"
           >
-            Browse Market
+            {{ t('admin.browseMarket') }}
           </router-link>
         </div>
 
         <!-- Loading State -->
         <div v-if="loading" class="text-center py-8">
           <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-500 mx-auto"></div>
-          <p class="text-neutral-500 mt-2">Loading...</p>
+          <p class="text-neutral-500 mt-2">{{ t('common.loading') }}</p>
         </div>
 
         <!-- Error State -->
         <div v-else-if="error" class="text-center py-8">
           <p class="text-red-500">{{ error }}</p>
           <Button type="secondary" size="sm" class="mt-2" @click="loadMySkills">
-            Retry
+            {{ t('common.retry') }}
           </Button>
         </div>
 
@@ -164,8 +166,8 @@ onMounted(() => {
           <svg class="w-12 h-12 text-neutral-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
-          <p class="text-neutral-500">No skills created yet</p>
-          <p class="text-neutral-400 text-sm mt-1">Use the CLI tool to publish your first skill</p>
+          <p class="text-neutral-500">{{ t('admin.noSkills') }}</p>
+          <p class="text-neutral-400 text-sm mt-1">{{ t('admin.useCliTip') }}</p>
         </div>
 
         <!-- Skills Table -->
@@ -173,11 +175,11 @@ onMounted(() => {
           <table class="w-full">
             <thead>
               <tr class="border-b border-neutral-200">
-                <th class="text-left py-3 px-4 text-sm font-medium text-neutral-500">Name</th>
-                <th class="text-left py-3 px-4 text-sm font-medium text-neutral-500">Slug</th>
-                <th class="text-left py-3 px-4 text-sm font-medium text-neutral-500">Version</th>
-                <th class="text-left py-3 px-4 text-sm font-medium text-neutral-500">Downloads</th>
-                <th class="text-right py-3 px-4 text-sm font-medium text-neutral-500">Actions</th>
+                <th class="text-left py-3 px-4 text-sm font-medium text-neutral-500">{{ t('common.name') }}</th>
+                <th class="text-left py-3 px-4 text-sm font-medium text-neutral-500">{{ t('admin.slug') }}</th>
+                <th class="text-left py-3 px-4 text-sm font-medium text-neutral-500">{{ t('skill.version') }}</th>
+                <th class="text-left py-3 px-4 text-sm font-medium text-neutral-500">{{ t('admin.downloads') }}</th>
+                <th class="text-right py-3 px-4 text-sm font-medium text-neutral-500">{{ t('common.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -207,14 +209,14 @@ onMounted(() => {
                       :to="`/skill/${skill.slug}`"
                       class="text-brand-500 hover:text-brand-700 text-sm"
                     >
-                      View
+                      {{ t('admin.view') }}
                     </router-link>
                     <button
                       @click="handleDelete(skill)"
                       :disabled="deleting === skill.id"
                       class="text-red-500 hover:text-red-700 text-sm disabled:opacity-50"
                     >
-                      {{ deleting === skill.id ? 'Deleting...' : 'Delete' }}
+                      {{ deleting === skill.id ? t('admin.deleting') : t('admin.delete') }}
                     </button>
                   </div>
                 </td>
@@ -226,16 +228,16 @@ onMounted(() => {
 
       <!-- Quick Actions Card -->
       <div class="bg-white rounded-lg border border-neutral-200 p-6">
-        <h2 class="text-lg font-semibold text-neutral-800 mb-4">Quick Actions</h2>
+        <h2 class="text-lg font-semibold text-neutral-800 mb-4">{{ t('admin.quickActions') }}</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="p-4 bg-neutral-50 rounded-lg">
-            <h3 class="font-medium text-neutral-800 mb-2">Publish a skill with CLI</h3>
+            <h3 class="font-medium text-neutral-800 mb-2">{{ t('admin.publishSkillCmd') }}</h3>
             <code class="text-sm text-neutral-600 bg-neutral-100 px-2 py-1 rounded">
               skillhub push ./my-skill
             </code>
           </div>
           <div class="p-4 bg-neutral-50 rounded-lg">
-            <h3 class="font-medium text-neutral-800 mb-2">Install a skill to project</h3>
+            <h3 class="font-medium text-neutral-800 mb-2">{{ t('admin.installSkillCmd') }}</h3>
             <code class="text-sm text-neutral-600 bg-neutral-100 px-2 py-1 rounded">
               skillhub pull skill-slug
             </code>

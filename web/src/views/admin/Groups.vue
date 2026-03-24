@@ -9,6 +9,7 @@
  * The member role is mapped to 'is_primary' boolean (admin=true, member=false).
  */
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   listGroups,
   createGroup,
@@ -26,6 +27,8 @@ import Button from '@/design-system/elements/Button/Button.vue'
 import Input from '@/design-system/elements/Input/Input.vue'
 import Tag from '@/design-system/elements/Tag/Tag.vue'
 import AppLayout from '@/design-system/layouts/AppLayout.vue'
+
+const { t } = useI18n()
 
 // State
 const groups = ref<Group[]>([])
@@ -205,13 +208,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppLayout title="Department Management" :show-sidebar="true">
+  <AppLayout :title="t('groups.title')" :show-sidebar="true">
     <div class="space-y-6">
     <!-- Page Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-neutral-800">Department Management</h1>
-        <p class="text-neutral-500 mt-1">Manage departments and their members</p>
+        <h1 class="text-2xl font-bold text-neutral-800">{{ t('groups.title') }}</h1>
+        <p class="text-neutral-500 mt-1">{{ t('groups.subtitle') }}</p>
       </div>
       <Button @click="openCreateModal()">
         <template #icon-left>
@@ -219,7 +222,7 @@ onMounted(() => {
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
         </template>
-        Create Department
+        {{ t('groups.createDepartment') }}
       </Button>
     </div>
 
@@ -234,17 +237,17 @@ onMounted(() => {
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-12">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto"></div>
-      <p class="text-neutral-500 mt-4">Loading departments...</p>
+      <p class="text-neutral-500 mt-4">{{ t('common.loading') }}</p>
     </div>
 
     <!-- Main Content -->
     <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Group Tree -->
       <div class="lg:col-span-1 bg-white rounded-lg border border-neutral-200 p-4">
-        <h2 class="text-lg font-semibold text-neutral-800 mb-4">Departments</h2>
+        <h2 class="text-lg font-semibold text-neutral-800 mb-4">{{ t('groups.departments') }}</h2>
 
         <div v-if="groups.length === 0" class="text-center py-8 text-neutral-500">
-          No departments yet
+          {{ t('groups.noDepartments') }}
         </div>
 
         <div v-else class="space-y-1">
@@ -269,7 +272,7 @@ onMounted(() => {
                 <button
                   @click.stop="openCreateModal(group.id)"
                   class="p-1 text-neutral-400 hover:text-neutral-600 rounded"
-                  title="Add sub-department"
+                  :title="t('groups.addSubDepartment')"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -278,7 +281,7 @@ onMounted(() => {
                 <button
                   @click.stop="openEditModal(group)"
                   class="p-1 text-neutral-400 hover:text-neutral-600 rounded"
-                  title="Edit"
+                  :title="t('common.edit')"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -287,7 +290,7 @@ onMounted(() => {
                 <button
                   @click.stop="handleDelete(group)"
                   class="p-1 text-neutral-400 hover:text-red-600 rounded"
-                  title="Delete"
+                  :title="t('common.delete')"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -319,7 +322,7 @@ onMounted(() => {
                   <button
                     @click.stop="openEditModal(child)"
                     class="p-1 text-neutral-400 hover:text-neutral-600 rounded"
-                    title="Edit"
+                    :title="t('common.edit')"
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -328,7 +331,7 @@ onMounted(() => {
                   <button
                     @click.stop="handleDelete(child)"
                     class="p-1 text-neutral-400 hover:text-red-600 rounded"
-                    title="Delete"
+                    :title="t('common.delete')"
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -344,7 +347,7 @@ onMounted(() => {
       <!-- Selected Group Details -->
       <div class="lg:col-span-2 bg-white rounded-lg border border-neutral-200 p-4">
         <div v-if="!selectedGroup" class="text-center py-12 text-neutral-500">
-          Select a department to view details
+          {{ t('groups.selectDepartment') }}
         </div>
 
         <template v-else>
@@ -356,14 +359,14 @@ onMounted(() => {
               </p>
             </div>
             <Button type="primary" size="sm" @click="openMemberModal">
-              Add Member
+              {{ t('groups.addMember') }}
             </Button>
           </div>
 
-          <h3 class="text-lg font-medium text-neutral-800 mb-4">Members</h3>
+          <h3 class="text-lg font-medium text-neutral-800 mb-4">{{ t('groups.members') }}</h3>
 
           <div v-if="members.length === 0" class="text-center py-8 text-neutral-500">
-            No members in this department
+            {{ t('groups.noMembers') }}
           </div>
 
           <div v-else class="space-y-2">
@@ -387,12 +390,12 @@ onMounted(() => {
               </div>
               <div class="flex items-center gap-3">
                 <Tag :type="member.is_primary ? 'primary' : 'default'">
-                  {{ member.is_primary ? 'Primary' : 'Member' }}
+                  {{ member.is_primary ? t('groups.primary') : t('groups.member') }}
                 </Tag>
                 <button
                   @click="handleRemoveMember(member)"
                   class="text-neutral-400 hover:text-red-600 p-1"
-                  title="Remove member"
+                  :title="t('groups.failedToRemoveMember')"
                 >
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -412,30 +415,30 @@ onMounted(() => {
     >
       <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
         <h2 class="text-lg font-semibold text-neutral-800 mb-4">
-          {{ isEditModalOpen ? 'Edit Department' : 'Create Department' }}
+          {{ isEditModalOpen ? t('groups.editDepartment') : t('groups.createDepartment') }}
         </h2>
 
         <div class="space-y-4">
           <Input
             v-model="formData.name"
-            label="Name"
+            :label="t('common.name')"
             required
-            placeholder="Department name"
+            :placeholder="t('groups.namePlaceholder')"
           />
           <Input
             v-model="formData.description"
-            label="Description"
-            placeholder="Department description"
+            :label="t('common.description')"
+            :placeholder="t('groups.descPlaceholder')"
           />
           <div v-if="rootGroups.length > 0">
             <label class="block text-sm font-medium text-neutral-700 mb-1">
-              Parent Department
+              {{ t('groups.parentDepartment') }}
             </label>
             <select
               v-model="formData.parent_id"
               class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
             >
-              <option :value="null">None (Root)</option>
+              <option :value="null">{{ t('groups.noneRoot') }}</option>
               <option
                 v-for="group in rootGroups"
                 :key="group.id"
@@ -449,13 +452,13 @@ onMounted(() => {
         </div>
 
         <div class="flex justify-end gap-3 mt-6">
-          <Button type="secondary" @click="closeModals">Cancel</Button>
+          <Button type="secondary" @click="closeModals">{{ t('common.cancel') }}</Button>
           <Button
             :loading="operationLoading"
             :disabled="!formData.name"
             @click="isEditModalOpen ? handleUpdate() : handleCreate()"
           >
-            {{ isEditModalOpen ? 'Update' : 'Create' }}
+            {{ isEditModalOpen ? t('roles.update') : t('roles.create') }}
           </Button>
         </div>
       </div>
@@ -467,41 +470,41 @@ onMounted(() => {
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-        <h2 class="text-lg font-semibold text-neutral-800 mb-4">Add Member</h2>
+        <h2 class="text-lg font-semibold text-neutral-800 mb-4">{{ t('groups.addMember') }}</h2>
 
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-neutral-700 mb-1">User</label>
+            <label class="block text-sm font-medium text-neutral-700 mb-1">{{ t('groups.selectUser') }}</label>
             <select
               v-model="selectedMemberId"
               class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
             >
-              <option value="">Select a user</option>
+              <option value="">{{ t('groups.selectUser') }}</option>
               <option v-for="user in users" :key="user.id" :value="user.id">
                 {{ user.username }} ({{ user.email }})
               </option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-neutral-700 mb-1">Role</label>
+            <label class="block text-sm font-medium text-neutral-700 mb-1">{{ t('groups.memberRole') }}</label>
             <select
               v-model="selectedMemberRole"
               class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
             >
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
+              <option value="member">{{ t('groups.member') }}</option>
+              <option value="admin">{{ t('groups.admin') }}</option>
             </select>
           </div>
         </div>
 
         <div class="flex justify-end gap-3 mt-6">
-          <Button type="secondary" @click="closeModals">Cancel</Button>
+          <Button type="secondary" @click="closeModals">{{ t('common.cancel') }}</Button>
           <Button
             :loading="operationLoading"
             :disabled="!selectedMemberId"
             @click="handleAddMember"
           >
-            Add
+            {{ t('roles.add') }}
           </Button>
         </div>
       </div>

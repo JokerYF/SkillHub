@@ -12,6 +12,7 @@
  * The role assignment endpoints exist but require role UUID instead of role name.
  */
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { listRoles, type Role } from '@/api/roles'
 import {
   listUsers,
@@ -25,6 +26,8 @@ import Button from '@/design-system/elements/Button/Button.vue'
 import Input from '@/design-system/elements/Input/Input.vue'
 import Tag from '@/design-system/elements/Tag/Tag.vue'
 import AppLayout from '@/design-system/layouts/AppLayout.vue'
+
+const { t } = useI18n()
 
 // State
 const users = ref<User[]>([])
@@ -154,13 +157,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppLayout title="User Management" :show-sidebar="true">
+  <AppLayout :title="t('users.title')" :show-sidebar="true">
     <div class="space-y-6">
     <!-- Page Header -->
     <div class="flex items-center justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-neutral-800">User Management</h1>
-        <p class="text-neutral-500 mt-1">Manage users and their roles</p>
+        <h1 class="text-2xl font-bold text-neutral-800">{{ t('users.title') }}</h1>
+        <p class="text-neutral-500 mt-1">{{ t('users.subtitle') }}</p>
       </div>
     </div>
 
@@ -168,7 +171,7 @@ onMounted(() => {
     <div class="max-w-md">
       <Input
         v-model="searchQuery"
-        placeholder="Search users..."
+        :placeholder="t('users.searchPlaceholder')"
         clearable
       >
         <template #prefix>
@@ -195,7 +198,7 @@ onMounted(() => {
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-12">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto"></div>
-      <p class="text-neutral-500 mt-4">Loading users...</p>
+      <p class="text-neutral-500 mt-4">{{ t('users.loading') }}</p>
     </div>
 
     <!-- Users Table -->
@@ -206,27 +209,27 @@ onMounted(() => {
             <th
               class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"
             >
-              User
+              {{ t('users.user') }}
             </th>
             <th
               class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"
             >
-              Email
+              {{ t('users.email') }}
             </th>
             <th
               class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"
             >
-              Roles
+              {{ t('users.roles') }}
             </th>
             <th
               class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"
             >
-              Status
+              {{ t('users.status') }}
             </th>
             <th
               class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider"
             >
-              Actions
+              {{ t('common.actions') }}
             </th>
           </tr>
         </thead>
@@ -268,7 +271,7 @@ onMounted(() => {
                   <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                   </svg>
-                  Add
+                  {{ t('users.addRole') }}
                 </button>
               </div>
             </td>
@@ -281,7 +284,7 @@ onMounted(() => {
                     : 'bg-red-100 text-red-700',
                 ]"
               >
-                {{ user.is_active ? 'Active' : 'Disabled' }}
+                {{ user.is_active ? t('users.active') : t('users.disabled') }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -290,7 +293,7 @@ onMounted(() => {
                 size="sm"
                 @click="toggleUserStatus(user)"
               >
-                {{ user.is_active ? 'Disable' : 'Enable' }}
+                {{ user.is_active ? t('users.disable') : t('users.enable') }}
               </Button>
             </td>
           </tr>
@@ -299,7 +302,7 @@ onMounted(() => {
 
       <!-- Empty State -->
       <div v-if="filteredUsers.length === 0" class="text-center py-12">
-        <p class="text-neutral-500">No users found</p>
+        <p class="text-neutral-500">{{ t('users.noUsers') }}</p>
       </div>
     </div>
 
@@ -309,9 +312,9 @@ onMounted(() => {
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
       <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-        <h2 class="text-lg font-semibold text-neutral-800 mb-4">Assign Role</h2>
+        <h2 class="text-lg font-semibold text-neutral-800 mb-4">{{ t('users.assignRole') }}</h2>
         <p class="text-neutral-500 mb-4">
-          Select a role to assign to {{ selectedUser?.username }}
+          {{ t('users.selectRole', { username: selectedUser?.username }) }}
         </p>
 
         <div class="space-y-2 mb-6">
@@ -339,13 +342,13 @@ onMounted(() => {
         </div>
 
         <div class="flex justify-end gap-3">
-          <Button type="secondary" @click="closeRoleModal">Cancel</Button>
+          <Button type="secondary" @click="closeRoleModal">{{ t('common.cancel') }}</Button>
           <Button
             :disabled="!selectedRoleId || operationLoading"
             :loading="operationLoading"
             @click="handleAssignRole"
           >
-            Assign
+            {{ t('users.assign') }}
           </Button>
         </div>
       </div>
