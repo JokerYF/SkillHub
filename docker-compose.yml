@@ -1,79 +1,24 @@
+version: '3.8'
+
 services:
-  # PostgreSQL 数据库
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: skillhub
-      POSTGRES_PASSWORD: skillhub123
-      POSTGRES_DB: skillhub
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/migrations:/docker-entrypoint-initdb.d
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U skillhub"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # Redis 缓存
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis_data:/data
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # RustFS 对象存储
-  rustfs:
-    image: rustfs/rustfs:latest
-    environment:
-      RUSTFS_DATA_DIR: /data
-      RUSTFS_ACCESS_KEY: skillhub
-      RUSTFS_SECRET_KEY: skillhub123
-    volumes:
-      - rustfs_data:/data
-    ports:
-      - "9000:9000"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
-  # Skills Hub 合并服务 (前端 + 后端 + nginx)
-  skillhub:
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    image: skillhub:dev
-    environment:
-      DATABASE_URL: postgres://skillhub:skillhub123@postgres:5432/skillhub
-      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
-      RUST_LOG: ${RUST_LOG:-info}
-      LOG_FORMAT: ${LOG_FORMAT:-pretty}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000,http://115.190.114.160:5173,http://115.190.114.160}
-      STORAGE_ENDPOINT: http://rustfs:9000
-      STORAGE_ACCESS_KEY: skillhub
-      STORAGE_SECRET_KEY: skillhub123
-      STORAGE_BUCKET: skills
+    container_name: skills-hub-backend
+    restart: unless-stopped
+    env_file:
+      - /root/config/.env
     ports:
-      - "8080:80"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rustfs:
-        condition: service_healthy
-
-volumes:
-  postgres_data:
-  redis_data:
-  rustfs_data:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
