@@ -14,12 +14,6 @@ use crate::repos::role::RoleRepo;
 use crate::state::AppState;
 use crate::utils::error::ApiError;
 
-/// 分配角色请求
-#[derive(Debug, Deserialize)]
-pub struct AssignRoleRequest {
-    pub role_id: Uuid,
-}
-
 /// 添加权限请求
 #[derive(Debug, Deserialize)]
 pub struct AddPermissionRequest {
@@ -34,9 +28,6 @@ pub fn routes() -> Router<AppState> {
         // 角色权限管理
         .route("/roles/{id}/permissions", get(get_role_permissions).post(add_permission))
         .route("/roles/{id}/permissions/{permission_id}", delete(remove_permission))
-        // 用户角色管理
-        .route("/users/{id}/roles", get(get_user_roles).post(assign_role_to_user))
-        .route("/users/{id}/roles/{role_id}", delete(remove_role_from_user))
         // 权限列表
         .route("/permissions", get(list_permissions))
 }
@@ -172,44 +163,6 @@ pub async fn remove_permission(
 ) -> Result<StatusCode, ApiError> {
     let repo = RoleRepo::new(state.db);
     repo.remove_permission(id, permission_id).await?;
-    Ok(StatusCode::NO_CONTENT)
-}
-
-/// 获取用户的所有角色
-pub async fn get_user_roles(
-    State(state): State<AppState>,
-    Path(id): Path<Uuid>,
-) -> Result<Json<Vec<Role>>, ApiError> {
-    let repo = RoleRepo::new(state.db);
-    let roles = repo.get_user_roles(id).await?;
-    Ok(Json(roles))
-}
-
-/// 为用户分配角色
-pub async fn assign_role_to_user(
-    State(state): State<AppState>,
-    AuthUser(current_user): AuthUser,
-    Path(id): Path<Uuid>,
-    Json(payload): Json<AssignRoleRequest>,
-) -> Result<StatusCode, ApiError> {
-    let role_repo = RoleRepo::new(state.db.clone());
-
-    // 检查角色是否存在
-    if role_repo.find_by_id(payload.role_id).await?.is_none() {
-        return Err(ApiError::NotFound("角色不存在".into()));
-    }
-
-    role_repo.assign_to_user(id, payload.role_id, Some(current_user.id)).await?;
-    Ok(StatusCode::NO_CONTENT)
-}
-
-/// 移除用户角色
-pub async fn remove_role_from_user(
-    State(state): State<AppState>,
-    Path((id, role_id)): Path<(Uuid, Uuid)>,
-) -> Result<StatusCode, ApiError> {
-    let repo = RoleRepo::new(state.db);
-    repo.remove_from_user(id, role_id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 

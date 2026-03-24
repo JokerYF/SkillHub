@@ -85,4 +85,74 @@ impl UserRepo {
 
         Ok(())
     }
+
+    /// 获取所有用户
+    pub async fn find_all(&self) -> Result<Vec<User>> {
+        let users = sqlx::query_as::<_, User>(
+            "SELECT * FROM users ORDER BY created_at DESC"
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(users)
+    }
+
+    /// 更新用户信息
+    pub async fn update(&self, id: Uuid, username: Option<&str>, email: Option<&str>, is_active: Option<bool>) -> Result<Option<User>> {
+        // 构建动态更新语句
+        let mut updates = Vec::new();
+        let mut param_count = 1;
+
+        if username.is_some() {
+            updates.push(format!("username = ${}", param_count));
+            param_count += 1;
+        }
+        if email.is_some() {
+            updates.push(format!("email = ${}", param_count));
+            param_count += 1;
+        }
+        if is_active.is_some() {
+            updates.push(format!("is_active = ${}", param_count));
+            param_count += 1;
+        }
+
+        if updates.is_empty() {
+            return self.find_by_id(id).await;
+        }
+
+        let sql = format!(
+            "UPDATE users SET {} WHERE id = ${} RETURNING *",
+            updates.join(", "),
+            param_count
+        );
+
+        let mut query = sqlx::query_as::<_, User>(&sql);
+
+        if let Some(u) = username {
+            query = query.bind(u);
+        }
+        if let Some(e) = email {
+            query = query.bind(e);
+        }
+        if let Some(a) = is_active {
+            query = query.bind(a);
+        }
+        query = query.bind(id);
+
+        let user = query.fetch_optional(&self.pool).await?;
+
+        Ok(user)
+    }
+
+    /// 删除用户
+    pub async fn delete(&self, id: Uuid) -> Result<bool> {
+        let result = sqlx::query(
+            "DELETE FROM users WHERE id = $1"
+        )
+        .bind(id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(result.rows_affected() > 0)
+    }
 }

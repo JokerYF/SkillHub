@@ -16,8 +16,7 @@ export interface UpdateUserRequest {
   is_active?: boolean
 }
 
-// Note: Backend currently only has /users/me endpoints, not full user management
-// These functions are kept for future use when backend implements admin user management
+// User Management API - Backend now implements full user management
 
 export async function listUsers(): Promise<User[]> {
   const { data } = await api.get<User[]>('/users')
@@ -41,17 +40,17 @@ export async function deleteUser(id: string): Promise<void> {
 /**
  * Assign a role to a user
  * @param userId - The user's UUID
- * @param roleId - The role's UUID (not role name)
+ * @param roleName - The role name (e.g., 'admin', 'user')
  */
-export async function assignRole(userId: string, roleId: string): Promise<void> {
-  await api.post(`/users/${userId}/roles`, { role_id: roleId })
+export async function assignRole(userId: string, roleName: string): Promise<void> {
+  await api.post(`/users/${userId}/roles`, { role: roleName })
 }
 
 /**
  * Remove a role from a user
  * @param userId - The user's UUID
- * @param roleId - The role's UUID (not role name)
+ * @param roleName - The role name (e.g., 'admin', 'user')
  */
-export async function removeRole(userId: string, roleId: string): Promise<void> {
-  await api.delete(`/users/${userId}/roles/${roleId}`)
+export async function removeRole(userId: string, roleName: string): Promise<void> {
+  await api.delete(`/users/${userId}/roles/${roleName}`)
 }

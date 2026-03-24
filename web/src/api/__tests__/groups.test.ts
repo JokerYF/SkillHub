@@ -144,18 +144,16 @@ describe('Groups API', () => {
     it('should call GET /groups/:id/members and return members list', async () => {
       const mockMembers: GroupMember[] = [
         {
-          user_id: '1',
+          id: '1',
           username: 'john',
           email: 'john@example.com',
-          role: 'admin',
-          joined_at: '2024-01-01T00:00:00Z',
+          is_primary: true,
         },
         {
-          user_id: '2',
+          id: '2',
           username: 'jane',
           email: 'jane@example.com',
-          role: 'member',
-          joined_at: '2024-01-02T00:00:00Z',
+          is_primary: false,
         },
       ]
 
@@ -172,11 +170,11 @@ describe('Groups API', () => {
     it('should call POST /groups/:id/members with user data', async () => {
       vi.mocked(api.post).mockResolvedValueOnce({})
 
-      await addGroupMember('1', { user_id: '3', role: 'member' })
+      await addGroupMember('1', { user_id: '3', is_primary: false })
 
       expect(api.post).toHaveBeenCalledWith('/groups/1/members', {
         user_id: '3',
-        role: 'member',
+        is_primary: false,
       })
     })
   })
