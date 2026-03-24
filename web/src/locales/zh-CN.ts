@@ -229,6 +229,17 @@ export default {
     roleManagementDesc: '配置角色和权限',
   },
 
+  // 应用布局
+  appLayout: {
+    mySkills: '我的技能',
+    profile: '个人中心',
+    settings: '设置',
+    copyright: '© {year} Skills Intelligence Hub. 保留所有权利。',
+    help: '帮助文档',
+    privacy: '隐私政策',
+    terms: '服务条款',
+  },
+
   // API 错误消息（前端显示）
   apiErrors: {
     BAD_REQUEST: '请求参数错误',

@@ -228,6 +228,17 @@ export default {
     roleManagementDesc: 'Configure roles and permissions',
   },
 
+  // App Layout
+  appLayout: {
+    mySkills: 'My Skills',
+    profile: 'Profile',
+    settings: 'Settings',
+    copyright: '© {year} Skills Intelligence Hub. All rights reserved.',
+    help: 'Help',
+    privacy: 'Privacy Policy',
+    terms: 'Terms of Service',
+  },
+
   // API Errors
   apiErrors: {
     BAD_REQUEST: 'Bad request',

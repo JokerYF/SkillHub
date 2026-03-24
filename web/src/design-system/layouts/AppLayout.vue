@@ -6,6 +6,7 @@
  */
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 
 // Props 定义
@@ -27,6 +28,9 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: 'toggleSidebar'): void
 }>()
+
+// i18n
+const { t } = useI18n()
 
 // 路由和状态
 const route = useRoute()
@@ -57,22 +61,22 @@ const mainClasses = computed(() => {
 })
 
 // 导航菜单项
-const navItems = [
-  { name: 'market', label: '技能市场', path: '/', icon: 'home' },
-  { name: 'my-skills', label: '我的技能', path: '/my-skills', icon: 'folder' },
-  { name: 'admin', label: '管理后台', path: '/admin', icon: 'settings', admin: true },
-]
+const navItems = computed(() => [
+  { name: 'market', label: t('nav.market'), path: '/', icon: 'home' },
+  { name: 'my-skills', label: t('appLayout.mySkills'), path: '/my-skills', icon: 'folder' },
+  { name: 'admin', label: t('nav.admin'), path: '/admin', icon: 'settings', admin: true },
+])
 
 // Admin 二级菜单项
-const adminSubItems = [
-  { name: 'admin-users', label: '用户管理', path: '/admin/users' },
-  { name: 'admin-groups', label: '组织管理', path: '/admin/groups' },
-  { name: 'admin-roles', label: '角色管理', path: '/admin/roles' },
-]
+const adminSubItems = computed(() => [
+  { name: 'admin-users', label: t('users.title'), path: '/admin/users' },
+  { name: 'admin-groups', label: t('groups.title'), path: '/admin/groups' },
+  { name: 'admin-roles', label: t('roles.title'), path: '/admin/roles' },
+])
 
 // 计算当前激活的菜单项
 const activeNavItem = computed(() => {
-  return navItems.find(item => item.path === route.path)
+  return navItems.value.find(item => item.path === route.path)
 })
 
 // 判断是否在 admin 路由下
@@ -82,7 +86,7 @@ const isAdminRoute = computed(() => {
 
 // 计算 admin 二级菜单激活状态
 const activeSubItem = computed(() => {
-  return adminSubItems.find(item => item.path === route.path)
+  return adminSubItems.value.find(item => item.path === route.path)
 })
 
 // 退出登录
@@ -128,7 +132,7 @@ const toggleUserMenu = () => {
               </svg>
             </div>
             <span class="hidden sm:block text-lg font-semibold text-neutral-800">
-              Skills Hub
+              {{ t('nav.brand') }}
             </span>
           </router-link>
         </div>
@@ -180,21 +184,21 @@ const toggleUserMenu = () => {
                   class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
                   @click="isUserMenuOpen = false"
                 >
-                  个人中心
+                  {{ t('appLayout.profile') }}
                 </router-link>
                 <router-link
                   to="/settings"
                   class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
                   @click="isUserMenuOpen = false"
                 >
-                  设置
+                  {{ t('appLayout.settings') }}
                 </router-link>
                 <hr class="my-1 border-neutral-200" />
                 <button
                   class="w-full text-left px-4 py-2 text-sm text-semantic-error-dark hover:bg-neutral-50"
                   @click="handleLogout"
                 >
-                  退出登录
+                  {{ t('auth.nav.logout') }}
                 </button>
               </div>
             </div>
@@ -206,13 +210,13 @@ const toggleUserMenu = () => {
               to="/login"
               class="text-neutral-600 hover:text-neutral-900 px-3 py-2 rounded-md text-sm font-medium"
             >
-              登录
+              {{ t('auth.nav.login') }}
             </router-link>
             <router-link
               to="/register"
               class="bg-brand-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-brand-600"
             >
-              注册
+              {{ t('auth.nav.register') }}
             </router-link>
           </template>
         </div>
@@ -312,11 +316,11 @@ const toggleUserMenu = () => {
     <!-- 页脚 -->
     <footer class="border-t border-neutral-200 bg-white py-4 px-6 mt-auto">
       <div class="flex flex-col sm:flex-row justify-between items-center text-sm text-neutral-500">
-        <p>&copy; {{ new Date().getFullYear() }} Skills Intelligence Hub. All rights reserved.</p>
+        <p>{{ t('appLayout.copyright', { year: new Date().getFullYear() }) }}</p>
         <div class="flex space-x-4 mt-2 sm:mt-0">
-          <a href="#" class="hover:text-neutral-700">帮助文档</a>
-          <a href="#" class="hover:text-neutral-700">隐私政策</a>
-          <a href="#" class="hover:text-neutral-700">服务条款</a>
+          <a href="#" class="hover:text-neutral-700">{{ t('appLayout.help') }}</a>
+          <a href="#" class="hover:text-neutral-700">{{ t('appLayout.privacy') }}</a>
+          <a href="#" class="hover:text-neutral-700">{{ t('appLayout.terms') }}</a>
         </div>
       </div>
     </footer>
