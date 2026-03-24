@@ -11,7 +11,7 @@ daily_summary:
 task_rules:
   - keywords: [实现, 开发, 添加, 新建]
     type: feature
-    workflow: [architect, ui-designer, "parallel: [backend, frontend]", developer, tester]
+    workflow: [architect, ui-designer, "parallel: [backend, frontend]", developer, tester, developer]
 
   - keywords: [审查, review, 检查]
     type: review
@@ -23,19 +23,19 @@ task_rules:
 
   - keywords: [修复, fix, bug]
     type: bugfix
-    workflow: [backend, developer, tester]
+    workflow: [backend, developer, tester, developer]
 
   - keywords: [设计, 架构, 方案]
     type: design
     workflow: [architect]
 
+  - keywords: [构建, 镜像, image, build]
+    type: build-image
+    workflow: [developer, tester]
+
   - keywords: [部署, deploy, 云端, 环境]
     type: deploy
     workflow: [developer]
-
-  - keywords: [云端测试, cloud-test]
-    type: cloud-test
-    workflow: [developer, tester]
 
   - keywords: [UI, 界面, 交互, 体验, 样式]
     type: ui-design

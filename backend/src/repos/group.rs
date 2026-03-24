@@ -15,7 +15,7 @@ impl GroupRepo {
     }
 
     /// 创建用户组
-    pub async fn create(&self, payload: &CreateGroup, created_by: Option<Uuid>) -> Result<Group> {
+    pub async fn create(&self, payload: &CreateGroup, _created_by: Option<Uuid>) -> Result<Group> {
         debug!(name = %payload.name, "Creating group");
 
         let group = sqlx::query_as::<_, Group>(

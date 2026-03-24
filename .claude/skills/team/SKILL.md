@@ -37,7 +37,7 @@ description: Use when starting team collaboration for development, review, testi
 
 **目的**：防止后续修改破坏已完成的工作，便于回滚和追踪。
 
-### 5. 任务总结 ⭐ 新增
+### 5. 任务总结 ⭐
 
 **每个 Agent 完成任务后，生成当日任务总结**：
 
@@ -53,72 +53,88 @@ description: Use when starting team collaboration for development, review, testi
 
 **目的**：方便长期记忆，回顾之前做过的工作，便于知识沉淀。
 
-### 6. 部署到云端 ⭐
+### 6. 构建本地镜像 ⭐ 新流程
 
-**研发完成后，由部署专员（developer）同步代码到云端**：
+**研发完成后，由部署专员构建本地 Docker 镜像**：
 
-1. 接收研发完成通知
-2. rsync 同步代码到云端服务器
-3. 安装新依赖（如有）
-4. 重启服务
-5. 执行健康检查
-6. 通知测试工程师进行云端测试
+```bash
+# 构建本地镜像
+docker compose build
 
-### 7. 云端测试验证
+# 镜像命名规范
+# skills-hub-backend:local
+# skills-hub-frontend:local
+```
 
-**测试工程师在云端环境执行测试验证**：
+**数据库连接配置**：
+- 使用 `.env` 文件配置云端数据库连接
+- 镜像构建时将 `.env` 打包进去
+- 本地测试直接连接云端数据库
 
-1. 部署专员通知后开始测试
-2. 在云端执行功能测试、集成测试
-3. 验证通过后，通知 PM 可以推送
+### 7. QA 本地验证 ⭐ 新流程
 
-### 8. PM 推送代码 ⭐
+**测试工程师在本地使用 Docker 镜像进行验证**：
 
-**测试验证通过后，由 PM 统一推送到 GitHub**：
+1. 部署专员通知后启动本地容器
+2. 使用本地镜像 + 云端数据库进行测试
+3. 执行 API 测试和 UI 测试
+4. 汇总 Bug 清单，反馈给研发
+5. 验证通过后，通知部署专员可以部署
+
+**优势**：
+- 真实的云端数据库环境
+- 避免云端部署后发现问题再回滚
+- 快速迭代验证
+
+### 8. 部署镜像到云端 ⭐ 新流程
+
+**QA 验证通过后，部署专员将镜像推送到云端**：
+
+```bash
+# 方式一：推送镜像到云端 registry（推荐）
+docker tag skills-hub-backend:local registry.example.com/skills-hub-backend:latest
+docker push registry.example.com/skills-hub-backend:latest
+
+# 方式二：直接在云端构建
+ssh cloud-server "cd /root/projects/skills_hub && docker compose build && docker compose up -d"
+```
+
+**云端环境说明**：
+- 云端为**测试环境**
+- 连接云端数据库
+- 配置与本地测试一致
+
+### 9. PM 推送代码 ⭐
+
+**部署完成后，由 PM 统一推送到 GitHub**：
 
 1. 确认所有提交已完成
-2. 确认云端测试验证通过
-3. 推送代码：
+2. 确认 QA 本地验证通过
+3. 确认云端部署成功
+4. 推送代码：
    ```bash
    git push origin master
    ```
 
-**目的**：在推送前有最后一次检查机会，确保代码质量。
-
-### 9. 汇总结果
+### 10. 汇总结果
 
 收集各 agent 输出，生成结构化报告。
 
-## 角色职责
+## 新旧流程对比
 
-| 角色 | 职责 | 是否推送 |
-|------|------|----------|
-| 架构师 | 技术决策、架构设计、Code Review | ❌ 仅提交 |
-| UI交互工程师 | UI 设计、交互流程、用户体验 | ❌ 仅提交 |
-| 后端开发 | API、CLI 开发 | ❌ 仅提交 |
-| 前端开发 | Web UI 开发 | ❌ 仅提交 |
-| 部署专员 | 代码部署、云端环境配置 | ❌ 仅提交 |
-| 测试工程师 | 测试验证、质量保障 | ❌ 仅提交 |
-| PM | 统筹协调、最终推送 | ✅ 推送代码 |
-
-## 任务类型
-
-| 类型 | 关键词 | 工作流 |
+| 阶段 | 旧流程 | 新流程 |
 |------|--------|--------|
-| feature | 实现、开发、添加、新建 | architect → ui-designer → backend/frontend 并行 → developer(部署) → tester(云端测试) → PM push |
-| review | 审查、review、检查 | architect → commit → PM push |
-| test | 测试、test、验证 | tester → commit → PM push |
-| bugfix | 修复、fix、bug | backend → commit → developer(部署) → tester(云端测试) → PM push |
-| design | 设计、架构、方案 | architect → commit → PM push |
-| deploy | 部署、deploy、云端、环境 | developer → commit → PM push |
-| cloud-test | 云端测试 | developer → tester → PM push |
-| ui-design | UI、界面、交互、体验、样式 | ui-designer → commit → PM push |
+| 研发完成 | 直接部署到云端 | 先构建本地镜像 |
+| QA 验证 | 在云端环境测试 | 本地镜像测试（连云端DB） |
+| 验证时机 | 部署后验证 | 部署前验证 |
+| 问题修复 | 需要回滚云端 | 本地直接修改重新构建 |
+| 部署触发 | 研发完成后 | QA 验证通过后 |
 
 ## 流程图
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                        Feature 开发流程                           │
+│                        Feature 开发流程（新）                      │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  ┌───────────┐    ┌───────────────┐    ┌───────────────────┐    │
@@ -128,12 +144,46 @@ description: Use when starting team collaboration for development, review, testi
 │                                                   │              │
 │                                                   ▼              │
 │  ┌───────────┐    ┌───────────────────┐    ┌───────────────┐    │
-│  │    PM     │◀───│     测试工程师      │◀───│   部署专员    │    │
-│  │ (推送)    │    │    (云端测试)       │    │ (云端部署)   │    │
-│  └───────────┘    └───────────────────┘    └───────────────┘    │
+│  │    PM     │◀───│     部署专员       │◀───│   测试工程师   │    │
+│  │ (推送)    │    │  (部署镜像到云端)   │    │ (本地镜像测试) │    │
+│  └───────────┘    └───────────────────┘    └───────┬───────┘    │
+│                                                    │             │
+│                                                    ▼             │
+│                                           ┌───────────────┐      │
+│                                           │   部署专员     │      │
+│                                           │ (构建本地镜像) │      │
+│                                           └───────────────┘      │
+│                                                                  │
+│  数据库：本地镜像 → 云端数据库                                     │
+│  云端环境：测试环境                                               │
 │                                                                  │
 └──────────────────────────────────────────────────────────────────┘
 ```
+
+## 角色职责
+
+| 角色 | 职责 | 是否推送 |
+|------|------|----------|
+| 架构师 | 技术决策、架构设计、Code Review | ❌ 仅提交 |
+| UI交互工程师 | UI 设计、交互流程、用户体验 | ❌ 仅提交 |
+| 后端开发 | API、CLI 开发 | ❌ 仅提交 |
+| 前端开发 | Web UI 开发 | ❌ 仅提交 |
+| 部署专员 | 构建镜像、部署到云端 | ❌ 仅提交 |
+| 测试工程师 | 本地镜像测试、质量保障 | ❌ 仅提交 |
+| PM | 统筹协调、最终推送 | ✅ 推送代码 |
+
+## 任务类型
+
+| 类型 | 关键词 | 工作流 |
+|------|--------|--------|
+| feature | 实现、开发、添加、新建 | architect → ui-designer → backend/frontend 并行 → developer(构建镜像) → tester(本地测试) → developer(部署云端) → PM push |
+| review | 审查、review、检查 | architect → commit → PM push |
+| test | 测试、test、验证 | tester → commit → PM push |
+| bugfix | 修复、fix、bug | backend → commit → developer(构建镜像) → tester(本地测试) → developer(部署云端) → PM push |
+| design | 设计、架构、方案 | architect → commit → PM push |
+| build-image | 构建、镜像、image | developer(构建镜像) → tester(本地测试) |
+| deploy | 部署、deploy、云端、环境 | developer(部署云端) → PM push |
+| ui-design | UI、界面、交互、体验、样式 | ui-designer → commit → PM push |
 
 ## 提交规范
 
@@ -149,14 +199,16 @@ description: Use when starting team collaboration for development, review, testi
 | chore | 构建/工具相关 |
 | deploy | 部署相关 |
 | design | 设计相关 |
+| build | 镜像构建 |
 
 示例：
 ```
 feat(auth): add JWT middleware by backend
 fix(api): resolve CORS issue by backend
 design(ui): add login page mockup by ui-designer
-deploy(cloud): sync code to cloud-server by developer
-test(api): verify endpoints on cloud by tester
+build(image): build local docker images by developer
+deploy(cloud): deploy images to cloud by developer
+test(local): verify with local image by tester
 ```
 
 ## 使用示例
@@ -166,8 +218,8 @@ test(api): verify endpoints on cloud by tester
 /team review src/backend/auth.rs
 /team 修复登录验证 bug
 /team 设计 API 接口
+/team 构建镜像
 /team 部署到云端
-/team 云端测试
 /team 设计登录页面的 UI 交互
 ```
 
@@ -196,9 +248,10 @@ test(api): verify endpoints on cloud by tester
 ### 工作流调整
 
 ```
-feature: architect → ui-designer → backend(加载TDD) / frontend(加载TDD) 并行 → developer → tester
-bugfix: backend(加载TDD) → developer → tester
-deploy: developer
+feature: architect → ui-designer → backend(加载TDD) / frontend(加载TDD) 并行 → developer(构建镜像) → tester(本地测试) → developer(部署云端)
+bugfix: backend(加载TDD) → developer(构建镜像) → tester(本地测试) → developer(部署云端)
+build-image: developer(构建镜像) → tester(本地测试)
+deploy: developer(部署云端)
 ui-design: ui-designer
 ```
 
@@ -245,5 +298,84 @@ cat .claude/daily-summaries/$(date +%Y-%m-%d).md
 ls -la .claude/daily-summaries/ | tail -7
 
 # 搜索特定日期的总结
-cat .claude/daily-summaries/2026-03-23.md
+cat .claude/daily-summaries/2026-03-24.md
+```
+
+## ⭐ 本地镜像测试配置
+
+### 配置原则
+
+**镜像构建时不打包任何配置文件**，配置在运行时手动指定。
+
+### 本地测试
+
+```yaml
+# docker-compose.yml
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - .env.local  # 本地配置文件
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build: ./web
+    ports:
+      - "5173:5173"
+```
+
+### 云端部署
+
+```bash
+# 云端配置文件位置：/root/config/.env
+ssh cloud-server "cd /root/projects/skills_hub && docker compose --env-file /root/config/.env up -d"
+```
+
+### .env 示例
+
+```env
+# 云端数据库连接
+DATABASE_URL=postgresql://postgres:password@115.190.114.160:5432/skills_hub
+
+# JWT 密钥
+JWT_SECRET=your-jwt-secret-key
+
+# 日志配置
+RUST_LOG=info
+LOG_FORMAT=pretty
+```
+
+### 测试流程
+
+```bash
+# 1. 构建镜像（不含配置）
+docker compose build
+
+# 2. 启动容器（指定配置文件）
+docker compose --env-file .env.local up -d
+
+# 3. 查看日志
+docker compose logs -f
+
+# 4. 执行测试
+# API 测试
+curl http://localhost:3000/api/health
+
+# UI 测试
+# 浏览器访问 http://localhost:5173
+
+# 5. 停止容器
+docker compose down
+```
+
+### Dockerfile 规范
+
+```dockerfile
+# ❌ 禁止：不要复制配置文件
+# COPY .env /app/.env
+
+# ✅ 正确：只复制代码
+COPY src/ /app/src/
+COPY Cargo.toml /app/
 ```

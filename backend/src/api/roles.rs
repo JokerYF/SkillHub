@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, State},
-    routing::{delete, get, post, put},
+    routing::{delete, get},
     Json, Router,
 };
 use serde::Deserialize;
@@ -11,7 +11,6 @@ use crate::models::role::{CreateRole, Role, RoleDetail, UpdateRole};
 use crate::models::permission::Permission;
 use crate::repos::permission::PermissionRepo;
 use crate::repos::role::RoleRepo;
-use crate::services::permission::PermissionService;
 use crate::state::AppState;
 use crate::utils::error::ApiError;
 

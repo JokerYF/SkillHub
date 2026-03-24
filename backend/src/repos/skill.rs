@@ -1,10 +1,9 @@
 use anyhow::Result;
-use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::models::skill::{
-    CreateSkill, CreateSkillTag, CreateSkillVersion, Skill, SkillTag, SkillTagResponse, SkillVersion, SkillManifest,
+    CreateSkill, Skill, SkillTag, SkillTagResponse, SkillVersion, SkillManifest,
 };
 use std::collections::HashMap;
 

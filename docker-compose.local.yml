@@ -1,0 +1,17 @@
+# 本地测试配置
+# 只启动 skillhub 服务，连接云端数据库
+# 使用方式: docker compose -f docker-compose.local.yml --env-file .env.local up -d
+
+services:
+  skillhub:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: skillhub:local
+    env_file:
+      - .env.local
+    ports:
+      - "8080:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

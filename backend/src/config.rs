@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use serde::Deserialize;
 
 #[derive(Debug, Clone)]
 pub struct Config {

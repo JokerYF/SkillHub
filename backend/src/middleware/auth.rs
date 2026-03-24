@@ -1,6 +1,6 @@
 use axum::{
     async_trait,
-    extract::{FromRef, FromRequestParts},
+    extract::FromRequestParts,
     http::request::Parts,
 };
 use serde::{Deserialize, Serialize};
