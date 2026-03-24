@@ -6,7 +6,6 @@
  */
 import { computed } from 'vue'
 import type { ButtonProps, ButtonEmits, ButtonSize, ButtonType } from './Button.types'
-import { buttonSizeMap, buttonTypeMap } from './Button.types'
 
 // Props 定义
 const props = withDefaults(defineProps<ButtonProps>(), {
@@ -26,6 +25,43 @@ const emit = defineEmits<ButtonEmits>()
 // 计算是否可点击
 const isDisabled = computed(() => props.disabled || props.loading)
 
+// 尺寸样式映射（使用静态类名，避免 JIT 无法识别）
+const sizeClassMap: Record<ButtonSize, string> = {
+  xs: 'h-6 text-xs px-1.5',
+  sm: 'h-8 text-sm px-2',
+  md: 'h-10 text-sm px-3',
+  lg: 'h-12 text-base px-4',
+  xl: 'h-14 text-base px-5',
+}
+
+// 类型样式映射（使用静态类名）
+const typeClassMap: Record<ButtonType, { base: string; disabled: string }> = {
+  primary: {
+    base: 'bg-brand-500 text-white hover:bg-brand-600 active:bg-brand-700',
+    disabled: 'bg-neutral-200 text-neutral-400 cursor-not-allowed',
+  },
+  secondary: {
+    base: 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 active:bg-neutral-300',
+    disabled: 'bg-neutral-100 text-neutral-400 cursor-not-allowed',
+  },
+  outline: {
+    base: 'border-2 border-brand-500 text-brand-500 bg-transparent hover:bg-brand-50 active:bg-brand-100',
+    disabled: 'border-neutral-200 text-neutral-400 cursor-not-allowed bg-transparent',
+  },
+  ghost: {
+    base: 'text-neutral-600 bg-transparent hover:bg-neutral-100 active:bg-neutral-200',
+    disabled: 'text-neutral-400 cursor-not-allowed',
+  },
+  danger: {
+    base: 'bg-semantic-error-dark text-white hover:opacity-90 active:opacity-80',
+    disabled: 'bg-neutral-200 text-neutral-400 cursor-not-allowed',
+  },
+  success: {
+    base: 'bg-semantic-success-dark text-white hover:opacity-90 active:opacity-80',
+    disabled: 'bg-neutral-200 text-neutral-400 cursor-not-allowed',
+  },
+}
+
 // 计算按钮类名
 const buttonClasses = computed(() => {
   const classes: string[] = [
@@ -35,20 +71,18 @@ const buttonClasses = computed(() => {
     'transition-all duration-150 ease-in-out',
     'focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2',
     'select-none',
+    'rounded-lg',
   ]
 
   // 尺寸样式
-  const sizeStyles = buttonSizeMap[props.size as ButtonSize]
-  classes.push(`h-[${sizeStyles.height}]`)
-  classes.push(`text-[${sizeStyles.fontSize}]`)
+  classes.push(sizeClassMap[props.size as ButtonSize])
 
   // 类型样式
-  const typeStyles = buttonTypeMap[props.type as ButtonType]
-  classes.push(typeStyles.base)
-
-  // 禁用样式
+  const typeStyles = typeClassMap[props.type as ButtonType]
   if (isDisabled.value) {
     classes.push(typeStyles.disabled)
+  } else {
+    classes.push(typeStyles.base)
   }
 
   // 块级样式
@@ -58,16 +92,9 @@ const buttonClasses = computed(() => {
 
   // 形状样式
   if (props.shape === 'circle') {
-    classes.push('rounded-full')
-    classes.push('aspect-square')
-    classes.push('!p-0')
+    classes.push('rounded-full', 'aspect-square', '!p-0')
   } else if (props.shape === 'square') {
-    classes.push('rounded-lg')
-    classes.push('aspect-square')
-    classes.push('!p-0')
-  } else {
-    classes.push('rounded-lg')
-    classes.push(`px-[${sizeStyles.padding}]`)
+    classes.push('aspect-square', '!p-0')
   }
 
   return classes.join(' ')
@@ -186,7 +213,3 @@ const handleClick = (event: MouseEvent) => {
     </span>
   </button>
 </template>
-
-<style scoped>
-/* 自定义样式可以在这里添加 */
-</style>
