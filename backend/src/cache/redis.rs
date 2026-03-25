@@ -32,7 +32,7 @@ impl RedisCache {
         let mut conn = self.get_connection().await?;
         let ttl_secs = ttl.as_secs();
 
-        conn.set_ex(key, value, ttl_secs)
+        conn.set_ex::<_, _, ()>(key, value, ttl_secs)
             .await
             .map_err(|e| anyhow!("Failed to set cache: {}", e))?;
 

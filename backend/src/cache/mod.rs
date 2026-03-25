@@ -1,3 +1,3 @@
 pub mod redis;
 
-pub use redis::RedisCache;
+pub use redis::{RedisCache, CacheKey, ttl};
