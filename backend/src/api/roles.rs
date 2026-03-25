@@ -35,12 +35,12 @@ pub fn routes() -> Router<AppState> {
         .route("/permissions", get(list_permissions))
 }
 
-/// 获取所有角色
+/// 获取所有角色（包含权限）
 pub async fn list_roles(
     State(state): State<AppState>,
-) -> Result<Json<Vec<Role>>, ApiError> {
+) -> Result<Json<Vec<RoleDetail>>, ApiError> {
     let repo = RoleRepo::new(state.db);
-    let roles = repo.find_all().await?;
+    let roles = repo.find_all_with_permissions().await?;
     Ok(Json(roles))
 }
 
@@ -87,25 +87,48 @@ pub async fn update_role(
     AuthUser(current_user): AuthUser,
     Path(id): Path<Uuid>,
     Json(payload): Json<UpdateRole>,
-) -> Result<Json<Role>, ApiError> {
+) -> Result<Json<RoleDetail>, ApiError> {
     // 权限检查：需要 roles:update 权限
     check_permission_or_forbidden(&state, current_user.id, resources::ROLES, actions::UPDATE).await?;
 
-    let repo = RoleRepo::new(state.db);
+    let role_repo = RoleRepo::new(state.db.clone());
 
     // 如果更新名称，检查是否已存在
     if let Some(ref name) = payload.name {
-        if let Some(existing) = repo.find_by_name(name).await? {
+        if let Some(existing) = role_repo.find_by_name(name).await? {
             if existing.id != id {
                 return Err(ApiError::Conflict("角色名称已存在".into()));
             }
         }
     }
 
-    let role = repo.update(id, &payload).await?
+    // 更新角色基本信息
+    let role = role_repo.update(id, &UpdateRole {
+        name: payload.name,
+        description: payload.description,
+        permissions: None, // 权限单独处理
+    }).await?
         .ok_or_else(|| ApiError::NotFound("角色不存在或为系统角色".into()))?;
 
-    Ok(Json(role))
+    // 如果提供了权限列表，更新权限
+    if let Some(ref permission_names) = payload.permissions {
+        let permission_repo = PermissionRepo::new(state.db.clone());
+        let mut permission_ids = Vec::new();
+
+        for name in permission_names {
+            let permission = permission_repo.find_by_name(name).await?
+                .ok_or_else(|| ApiError::BadRequest(format!("权限 '{}' 不存在", name)))?;
+            permission_ids.push(permission.id);
+        }
+
+        role_repo.sync_permissions(id, &permission_ids).await?;
+    }
+
+    // 返回更新后的角色详情
+    let detail = role_repo.get_detail(id).await?
+        .ok_or_else(|| ApiError::NotFound("角色不存在".into()))?;
+
+    Ok(Json(detail))
 }
 
 /// 删除角色

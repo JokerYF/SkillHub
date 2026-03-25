@@ -69,6 +69,31 @@ impl RoleRepo {
         Ok(roles)
     }
 
+    /// 获取所有角色（包含权限）
+    pub async fn find_all_with_permissions(&self) -> Result<Vec<RoleDetail>> {
+        let roles = sqlx::query_as::<_, Role>(
+            "SELECT * FROM roles ORDER BY created_at ASC"
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut result = Vec::new();
+        for role in roles {
+            let permissions = self.get_role_permissions(role.id).await?;
+            result.push(RoleDetail {
+                id: role.id,
+                name: role.name,
+                description: role.description,
+                is_system: role.is_system,
+                permissions,
+                created_at: role.created_at,
+                updated_at: role.updated_at,
+            });
+        }
+
+        Ok(result)
+    }
+
     /// 更新角色
     pub async fn update(&self, id: Uuid, payload: &UpdateRole) -> Result<Option<Role>> {
         debug!(role_id = %id, "Updating role");
@@ -211,6 +236,36 @@ impl RoleRepo {
         .await?;
 
         Ok(result.rows_affected() > 0)
+    }
+
+    /// 同步角色权限（先删除所有，再添加指定的）
+    pub async fn sync_permissions(&self, role_id: Uuid, permission_ids: &[Uuid]) -> Result<()> {
+        debug!(role_id = %role_id, count = permission_ids.len(), "Syncing role permissions");
+
+        // 先删除所有权限
+        sqlx::query(
+            "DELETE FROM role_permissions WHERE role_id = $1"
+        )
+        .bind(role_id)
+        .execute(&self.pool)
+        .await?;
+
+        // 添加新权限
+        for permission_id in permission_ids {
+            sqlx::query(
+                r#"
+                INSERT INTO role_permissions (role_id, permission_id)
+                VALUES ($1, $2)
+                ON CONFLICT (role_id, permission_id) DO NOTHING
+                "#
+            )
+            .bind(role_id)
+            .bind(permission_id)
+            .execute(&self.pool)
+            .await?;
+        }
+
+        Ok(())
     }
 
     /// 为用户分配角色

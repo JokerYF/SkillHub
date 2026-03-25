@@ -30,30 +30,38 @@ const routes = [
     meta: { layout: 'app' }
   },
 
+  // My Skills route
+  {
+    path: '/my-skills',
+    name: 'MySkills',
+    component: () => import('@/views/MySkills.vue'),
+    meta: { requiresAuth: true, layout: 'app' }
+  },
+
   // Admin routes - use AppLayout with sidebar
   {
     path: '/admin',
     name: 'Admin',
     component: () => import('@/views/Admin.vue'),
-    meta: { requiresAuth: true, layout: 'admin' }
+    meta: { requiresAuth: true, requiresAdmin: true, layout: 'admin' }
   },
   {
     path: '/admin/users',
     name: 'AdminUsers',
     component: () => import('@/views/admin/Users.vue'),
-    meta: { requiresAuth: true, layout: 'admin' }
+    meta: { requiresAuth: true, requiresAdmin: true, layout: 'admin' }
   },
   {
     path: '/admin/groups',
     name: 'AdminGroups',
     component: () => import('@/views/admin/Groups.vue'),
-    meta: { requiresAuth: true, layout: 'admin' }
+    meta: { requiresAuth: true, requiresAdmin: true, layout: 'admin' }
   },
   {
     path: '/admin/roles',
     name: 'AdminRoles',
     component: () => import('@/views/admin/Roles.vue'),
-    meta: { requiresAuth: true, layout: 'admin' }
+    meta: { requiresAuth: true, requiresAdmin: true, layout: 'admin' }
   },
 
   // 404 handling
@@ -85,6 +93,12 @@ router.beforeEach(async (to, _from, next) => {
         next({ name: 'Login', query: { redirect: to.fullPath } })
         return
       }
+    }
+
+    // Check admin permission
+    if (to.meta.requiresAdmin && !userStore.isAdmin) {
+      next({ name: 'Market' })
+      return
     }
   }
 

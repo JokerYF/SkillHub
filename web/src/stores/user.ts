@@ -8,6 +8,7 @@ export interface UserInfo {
   username: string
   email: string
   role: string
+  roles?: string[]  // 用户角色列表
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -16,6 +17,16 @@ export const useUserStore = defineStore('user', () => {
   const loading = ref(false)
 
   const isLoggedIn = computed(() => !!token.value)
+
+  // 判断是否为管理员
+  const isAdmin = computed(() => {
+    if (!user.value) return false
+    // 检查 roles 数组中是否包含 admin
+    if (user.value.roles?.includes('admin')) return true
+    // 兼容旧的 role 字段
+    if (user.value.role === 'admin') return true
+    return false
+  })
 
   async function login(data: LoginRequest) {
     loading.value = true
@@ -82,6 +93,7 @@ export const useUserStore = defineStore('user', () => {
     user,
     loading,
     isLoggedIn,
+    isAdmin,
     login,
     register,
     logout,

@@ -26,6 +26,7 @@ pub struct CreateRole {
 pub struct UpdateRole {
     pub name: Option<String>,
     pub description: Option<String>,
+    pub permissions: Option<Vec<String>>,
 }
 
 /// 角色详情（包含权限列表）

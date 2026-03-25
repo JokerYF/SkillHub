@@ -44,6 +44,7 @@ const isUserMenuOpen = ref(false)
 // 计算当前用户信息和登录状态
 const currentUser = computed(() => userStore.user)
 const isLoggedIn = computed(() => userStore.isLoggedIn)
+const isAdmin = computed(() => userStore.isAdmin)
 
 // 计算主内容区域类名
 const mainClasses = computed(() => {
@@ -60,12 +61,20 @@ const mainClasses = computed(() => {
   return classes.join(' ')
 })
 
-// 导航菜单项
-const navItems = computed(() => [
-  { name: 'market', label: t('nav.market'), path: '/', icon: 'home' },
-  { name: 'my-skills', label: t('appLayout.mySkills'), path: '/my-skills', icon: 'folder' },
-  { name: 'admin', label: t('nav.admin'), path: '/admin', icon: 'settings', admin: true },
-])
+// 导航菜单项 - 根据权限过滤
+const navItems = computed(() => {
+  const items = [
+    { name: 'market', label: t('nav.market'), path: '/', icon: 'home' },
+    { name: 'my-skills', label: t('appLayout.mySkills'), path: '/my-skills', icon: 'folder' },
+    { name: 'admin', label: t('nav.admin'), path: '/admin', icon: 'settings', admin: true },
+  ]
+  // 过滤：未登录不显示 my-skills，非管理员不显示 admin
+  return items.filter(item => {
+    if (item.name === 'my-skills' && !isLoggedIn.value) return false
+    if (item.admin && !isAdmin.value) return false
+    return true
+  })
+})
 
 // Admin 二级菜单项
 const adminSubItems = computed(() => [
