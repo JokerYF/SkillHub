@@ -4,7 +4,7 @@
  *
  * 包含顶部导航栏、侧边栏（可选）和内容区域
  */
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
@@ -123,6 +123,18 @@ const handleNotifications = () => {
   // TODO: 实现通知面板
   alert(t('appLayout.notificationsComingSoon') || '通知功能即将推出')
 }
+
+// 初始化用户信息
+onMounted(async () => {
+  // 如果有 token 但没有用户信息，尝试获取
+  if (userStore.isTokenValid() && !userStore.user) {
+    try {
+      await userStore.fetchUser()
+    } catch {
+      // 获取失败，token 无效，用户会被重定向到登录页
+    }
+  }
+})
 </script>
 
 <template>
