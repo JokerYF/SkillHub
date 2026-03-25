@@ -38,11 +38,15 @@ const userStore = useUserStore()
 const isMobileMenuOpen = ref(false)
 const isUserMenuOpen = ref(false)
 const sidebarCollapsed = ref(false) // 内部管理折叠状态
+const isUserLoading = ref(false) // 用户信息加载状态
 
 // 计算当前用户信息和登录状态
 const currentUser = computed(() => userStore.user)
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const isAdmin = computed(() => userStore.isAdmin)
+
+// 是否显示用户信息（已登录且用户信息已加载）
+const showUserInfo = computed(() => isLoggedIn.value && (currentUser.value || !isUserLoading.value))
 
 // 计算主内容区域类名
 const mainClasses = computed(() => {
@@ -128,10 +132,13 @@ const handleNotifications = () => {
 onMounted(async () => {
   // 如果有 token 但没有用户信息，尝试获取
   if (userStore.isTokenValid() && !userStore.user) {
+    isUserLoading.value = true
     try {
       await userStore.fetchUser()
     } catch {
       // 获取失败，token 无效，用户会被重定向到登录页
+    } finally {
+      isUserLoading.value = false
     }
   }
 })
@@ -197,11 +204,11 @@ onMounted(async () => {
               >
                 <div class="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center">
                   <span class="text-brand-600 font-medium text-sm">
-                    {{ currentUser?.username?.charAt(0).toUpperCase() || 'U' }}
+                    {{ isUserLoading ? '...' : (currentUser?.username?.charAt(0).toUpperCase() || 'U') }}
                   </span>
                 </div>
                 <span class="hidden sm:block text-sm font-medium text-neutral-700">
-                  {{ currentUser?.username || 'User' }}
+                  {{ isUserLoading ? t('common.loading') : (currentUser?.username || 'User') }}
                 </span>
                 <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
