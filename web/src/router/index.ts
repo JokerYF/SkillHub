@@ -38,16 +38,18 @@ const routes = [
     meta: { requiresAuth: true, layout: 'app' }
   },
 
-  // Profile and Settings routes (placeholder - redirect to admin for now)
+  // Profile and Settings routes
   {
     path: '/profile',
     name: 'Profile',
-    redirect: '/admin'
+    component: () => import('@/views/Profile.vue'),
+    meta: { requiresAuth: true, layout: 'app' }
   },
   {
     path: '/settings',
     name: 'Settings',
-    redirect: '/admin'
+    component: () => import('@/views/Settings.vue'),
+    meta: { requiresAuth: true, layout: 'app' }
   },
 
   // Admin routes - use AppLayout with sidebar

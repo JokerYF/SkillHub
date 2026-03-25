@@ -13,15 +13,12 @@ import { useUserStore } from '@/stores/user'
 interface Props {
   /** 是否显示侧边栏 */
   showSidebar?: boolean
-  /** 侧边栏是否折叠 */
-  sidebarCollapsed?: boolean
   /** 页面标题 */
   title?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showSidebar: false,
-  sidebarCollapsed: false,
 })
 
 // Emits 定义
@@ -40,6 +37,7 @@ const userStore = useUserStore()
 // 内部状态
 const isMobileMenuOpen = ref(false)
 const isUserMenuOpen = ref(false)
+const sidebarCollapsed = ref(false) // 内部管理折叠状态
 
 // 计算当前用户信息和登录状态
 const currentUser = computed(() => userStore.user)
@@ -51,7 +49,7 @@ const mainClasses = computed(() => {
   const classes = ['flex-1', 'min-h-screen', 'transition-all', 'duration-300']
 
   if (props.showSidebar) {
-    if (props.sidebarCollapsed) {
+    if (sidebarCollapsed.value) {
       classes.push('lg:ml-16')
     } else {
       classes.push('lg:ml-64')
@@ -112,6 +110,12 @@ const toggleMobileMenu = () => {
 // 切换用户菜单
 const toggleUserMenu = () => {
   isUserMenuOpen.value = !isUserMenuOpen.value
+}
+
+// 切换侧边栏折叠状态
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+  emit('toggleSidebar')
 }
 
 // 通知按钮处理
@@ -303,7 +307,7 @@ const handleNotifications = () => {
       <div class="absolute bottom-4 left-0 right-0 px-4">
         <button
           class="w-full p-2 rounded-lg hover:bg-neutral-100 transition-colors text-neutral-500"
-          @click="emit('toggleSidebar')"
+          @click="toggleSidebar"
         >
           <svg
             :class="['w-5 h-5 mx-auto transition-transform', sidebarCollapsed && 'rotate-180']"
