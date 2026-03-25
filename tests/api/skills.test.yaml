@@ -1,0 +1,500 @@
+# 技能 API 测试用例
+# Skills Intelligence Hub - Phase 1 MVP
+
+metadata:
+  suite: skills
+  version: "1.0.0"
+  created: "2026-03-25"
+  author: "tester"
+
+test_cases:
+  TC-SKILL-001:
+    name: "获取技能列表 - 公开"
+    priority: "P0"
+    endpoint: "/api/skills"
+    method: "GET"
+    description: "验证可以获取公开技能列表"
+    preconditions:
+      - "数据库中存在公开技能"
+    test_steps:
+      - step: 1
+        action: "获取技能列表"
+        request:
+          headers: {}
+          query_params:
+            page: 1
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+            items:
+              id: "{{skill_id}}"
+              name: "{{skill_name}}"
+              slug: "{{skill_slug}}"
+              description: "{{skill_description}}"
+    validation:
+      - "返回数组格式"
+      - "每个技能包含必要字段"
+
+  TC-SKILL-002:
+    name: "获取技能列表 - 搜索"
+    priority: "P1"
+    endpoint: "/api/skills"
+    method: "GET"
+    description: "验证可以按关键词搜索技能"
+    preconditions:
+      - "数据库中存在技能"
+    test_steps:
+      - step: 1
+        action: "按关键词搜索"
+        request:
+          headers: {}
+          query_params:
+            q: "python"
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+
+  TC-SKILL-003:
+    name: "获取技能列表 - 按标签筛选"
+    priority: "P1"
+    endpoint: "/api/skills"
+    method: "GET"
+    description: "验证可以按标签筛选技能"
+    preconditions:
+      - "数据库中存在带标签的技能"
+    test_steps:
+      - step: 1
+        action: "按标签筛选"
+        request:
+          headers: {}
+          query_params:
+            tags: "python,security"
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+
+  TC-SKILL-004:
+    name: "获取技能详情 - 公开"
+    priority: "P0"
+    endpoint: "/api/skills/{slug}"
+    method: "GET"
+    description: "验证可以获取公开技能详情"
+    preconditions:
+      - "技能 python-security 存在且公开"
+    test_steps:
+      - step: 1
+        action: "获取技能详情"
+        request:
+          headers: {}
+          path_params:
+            slug: "python-security"
+        expected:
+          status_code: 200
+          response:
+            id: "{{skill_id}}"
+            name: "Python 安全编码规范"
+            slug: "python-security"
+            description: "{{description}}"
+            author_id: "{{author_id}}"
+            downloads: "{{downloads}}"
+    postconditions:
+      - "下载计数增加"
+
+  TC-SKILL-005:
+    name: "获取技能详情 - 不存在"
+    priority: "P2"
+    endpoint: "/api/skills/{slug}"
+    method: "GET"
+    description: "验证获取不存在的技能返回 404"
+    preconditions: []
+    test_steps:
+      - step: 1
+        action: "获取不存在的技能"
+        request:
+          headers: {}
+          path_params:
+            slug: "nonexistent-skill"
+        expected:
+          status_code: 404
+          response:
+            error: "NotFound"
+
+  TC-SKILL-006:
+    name: "创建技能 - 已登录用户"
+    priority: "P0"
+    endpoint: "/api/skills"
+    method: "POST"
+    description: "验证已登录用户可以创建技能"
+    preconditions:
+      - "用户已登录"
+      - "用户具有 skills:create 权限（或默认允许）"
+    test_steps:
+      - step: 1
+        action: "创建新技能"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+            Content-Type: "application/json"
+          body:
+            name: "测试技能 {{timestamp}}"
+            slug: "test-skill-{{timestamp}}"
+            description: "这是一个测试技能"
+            readme: "# 测试技能\n\n这是测试内容"
+            tags:
+              - "test"
+              - "automation"
+            is_public: true
+        expected:
+          status_code: 201
+          response:
+            id: "{{skill_id}}"
+            name: "测试技能 {{timestamp}}"
+            slug: "test-skill-{{timestamp}}"
+            author_id: "{{current_user_id}}"
+    cleanup:
+      - "删除创建的技能"
+
+  TC-SKILL-007:
+    name: "创建技能 - 未登录"
+    priority: "P1"
+    endpoint: "/api/skills"
+    method: "POST"
+    description: "验证未登录用户无法创建技能"
+    preconditions: []
+    test_steps:
+      - step: 1
+        action: "尝试创建技能"
+        request:
+          headers:
+            Content-Type: "application/json"
+          body:
+            name: "测试技能"
+            slug: "test-skill"
+            tags: []
+        expected:
+          status_code: 401
+
+  TC-SKILL-008:
+    name: "更新技能 - 作者"
+    priority: "P0"
+    endpoint: "/api/skills/{slug}"
+    method: "PUT"
+    description: "验证作者可以更新自己的技能"
+    preconditions:
+      - "用户已登录"
+      - "用户是技能的作者"
+    test_steps:
+      - step: 1
+        action: "更新技能"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+            Content-Type: "application/json"
+          path_params:
+            slug: "my-test-skill"
+          body:
+            name: "更新后的技能名称"
+            description: "更新后的描述"
+        expected:
+          status_code: 200
+          response:
+            name: "更新后的技能名称"
+            description: "更新后的描述"
+
+  TC-SKILL-009:
+    name: "更新技能 - 非作者无权限"
+    priority: "P1"
+    endpoint: "/api/skills/{slug}"
+    method: "PUT"
+    description: "验证非作者用户无法更新他人技能（无权限时）"
+    preconditions:
+      - "用户已登录"
+      - "用户不是技能的作者"
+      - "用户没有 skills:update 权限"
+    test_steps:
+      - step: 1
+        action: "尝试更新他人技能"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+            Content-Type: "application/json"
+          path_params:
+            slug: "other-user-skill"
+          body:
+            name: "尝试修改"
+        expected:
+          status_code: 403
+
+  TC-SKILL-010:
+    name: "删除技能 - 作者"
+    priority: "P0"
+    endpoint: "/api/skills/{slug}"
+    method: "DELETE"
+    description: "验证作者可以删除自己的技能"
+    preconditions:
+      - "用户已登录"
+      - "用户是技能的作者"
+    test_steps:
+      - step: 1
+        action: "删除技能"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+          path_params:
+            slug: "skill-to-delete"
+        expected:
+          status_code: 204
+    postconditions:
+      - "技能记录已删除"
+      - "相关版本和标签已删除"
+
+  TC-SKILL-011:
+    name: "删除技能 - 非作者无权限"
+    priority: "P1"
+    endpoint: "/api/skills/{slug}"
+    method: "DELETE"
+    description: "验证非作者用户无法删除他人技能（无权限时）"
+    preconditions:
+      - "用户已登录"
+      - "用户不是技能的作者"
+      - "用户没有 skills:delete 权限"
+    test_steps:
+      - step: 1
+        action: "尝试删除他人技能"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+          path_params:
+            slug: "other-user-skill"
+        expected:
+          status_code: 403
+
+  TC-SKILL-012:
+    name: "创建技能版本"
+    priority: "P1"
+    endpoint: "/api/skills/{slug}/versions"
+    method: "POST"
+    description: "验证可以创建技能版本"
+    preconditions:
+      - "用户已登录"
+      - "用户是技能的作者或有 skills:update 权限"
+      - "技能已存在"
+    test_steps:
+      - step: 1
+        action: "创建新版本"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+            Content-Type: "application/json"
+          path_params:
+            slug: "my-test-skill"
+          body:
+            version: "v1.1.0"
+            content: "# 更新内容\n\n新版本内容"
+            changelog: "修复了一些问题"
+        expected:
+          status_code: 201
+          response:
+            version: "v1.1.0"
+            skill_id: "{{skill_id}}"
+
+  TC-SKILL-013:
+    name: "创建技能版本 - 版本号格式错误"
+    priority: "P2"
+    endpoint: "/api/skills/{slug}/versions"
+    method: "POST"
+    description: "验证版本号格式错误时返回 400"
+    preconditions:
+      - "用户已登录"
+      - "用户是技能的作者"
+    test_steps:
+      - step: 1
+        action: "使用错误格式的版本号"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+            Content-Type: "application/json"
+          path_params:
+            slug: "my-test-skill"
+          body:
+            version: "1.0.0"  # 缺少 v 前缀
+            content: "content"
+        expected:
+          status_code: 400
+
+  TC-SKILL-014:
+    name: "获取技能版本列表"
+    priority: "P1"
+    endpoint: "/api/skills/{slug}/versions"
+    method: "GET"
+    description: "验证可以获取技能的所有版本"
+    preconditions:
+      - "技能已存在且有版本"
+    test_steps:
+      - step: 1
+        action: "获取版本列表"
+        request:
+          headers: {}
+          path_params:
+            slug: "python-security"
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+            items:
+              version: "v1.0.0"
+              skill_id: "{{skill_id}}"
+
+  TC-SKILL-015:
+    name: "按标签获取技能版本"
+    priority: "P1"
+    endpoint: "/api/skills/{slug}/{tag}"
+    method: "GET"
+    description: "验证可以按标签获取特定版本的技能"
+    preconditions:
+      - "技能存在"
+      - "标签存在"
+    test_steps:
+      - step: 1
+        action: "获取特定标签版本"
+        request:
+          headers: {}
+          path_params:
+            slug: "python-security"
+            tag: "latest"
+        expected:
+          status_code: 200
+          response:
+            id: "{{skill_id}}"
+            slug: "python-security"
+            content: "{{version_content}}"
+            version_info:
+              version: "v2.1.0"
+
+  TC-SKILL-016:
+    name: "创建技能标签"
+    priority: "P1"
+    endpoint: "/api/skills/{slug}/tags"
+    method: "POST"
+    description: "验证可以为技能创建标签"
+    preconditions:
+      - "用户已登录"
+      - "用户是技能的作者"
+      - "技能有对应的版本"
+    test_steps:
+      - step: 1
+        action: "创建标签"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+            Content-Type: "application/json"
+          path_params:
+            slug: "my-test-skill"
+          body:
+            tag: "stable"
+            version: "v1.0.0"
+        expected:
+          status_code: 200
+          response:
+            tag: "stable"
+            version: "v1.0.0"
+
+  TC-SKILL-017:
+    name: "删除技能标签"
+    priority: "P2"
+    endpoint: "/api/skills/{slug}/tags/{tag}"
+    method: "DELETE"
+    description: "验证可以删除技能标签"
+    preconditions:
+      - "用户已登录"
+      - "用户是技能的作者"
+      - "标签存在"
+    test_steps:
+      - step: 1
+        action: "删除标签"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+          path_params:
+            slug: "my-test-skill"
+            tag: "old-tag"
+        expected:
+          status_code: 204
+
+  TC-SKILL-018:
+    name: "下载技能文件"
+    priority: "P1"
+    endpoint: "/api/skills/{slug}/download/{tag}"
+    method: "GET"
+    description: "验证可以下载技能文件"
+    preconditions:
+      - "技能存在"
+      - "版本存在"
+    test_steps:
+      - step: 1
+        action: "下载技能"
+        request:
+          headers: {}
+          path_params:
+            slug: "python-security"
+            tag: "latest"
+        expected:
+          status_code: 200
+          headers:
+            Content-Type: "text/markdown; charset=utf-8"
+            Content-Disposition: "attachment; filename=\"python-security-latest.md\""
+          response: "{{file_content}}"
+
+  TC-SKILL-019:
+    name: "获取技能 Manifest"
+    priority: "P2"
+    endpoint: "/api/skills/{slug}/manifest"
+    method: "GET"
+    description: "验证可以获取技能的 Manifest"
+    preconditions:
+      - "技能存在"
+    test_steps:
+      - step: 1
+        action: "获取 Manifest"
+        request:
+          headers: {}
+          path_params:
+            slug: "python-security"
+        expected:
+          status_code: 200
+          response:
+            id: "{{skill_id}}"
+            name: "{{skill_name}}"
+            version: "2.1.0"
+            description: "{{description}}"
+
+  TC-SKILL-020:
+    name: "上传技能版本文件"
+    priority: "P1"
+    endpoint: "/api/skills/{slug}/versions/upload"
+    method: "POST"
+    description: "验证可以通过 multipart/form-data 上传技能版本"
+    preconditions:
+      - "用户已登录"
+      - "用户是技能的作者"
+    test_steps:
+      - step: 1
+        action: "上传版本文件"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+            Content-Type: "multipart/form-data"
+          path_params:
+            slug: "my-test-skill"
+          body_type: "multipart"
+          body:
+            version: "v2.0.0"
+            changelog: "重大更新"
+            file: "{{file_content}}"
+        expected:
+          status_code: 201
+          response:
+            version: "v2.0.0"

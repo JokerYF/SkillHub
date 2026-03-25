@@ -1,0 +1,414 @@
+# 管理后台 UI 测试用例
+# Skills Intelligence Hub - Phase 1 MVP
+
+metadata:
+  suite: admin
+  version: "1.0.0"
+  created: "2026-03-25"
+  author: "tester"
+
+page_url: "/admin"
+
+test_cases:
+  TC-UI-ADMIN-001:
+    name: "用户管理页面"
+    priority: "P1"
+    description: "验证用户管理页面正确显示"
+    preconditions:
+      - "管理员已登录"
+      - "管理员具有 users:read 权限"
+    test_steps:
+      - step: 1
+        action: "导航到用户管理"
+        navigate: "/admin/users"
+        expected:
+          - "显示用户列表表格"
+          - "显示用户名、邮箱、状态、角色列"
+          - "显示操作按钮（编辑、删除）"
+    elements:
+      - selector: "table, .user-table"
+        description: "用户表格"
+        expected: "visible"
+      - selector: "th:has-text('用户名'), th:has-text('Username')"
+        description: "用户名列"
+        expected: "visible"
+      - selector: "th:has-text('邮箱'), th:has-text('Email')"
+        description: "邮箱列"
+        expected: "visible"
+
+  TC-UI-ADMIN-002:
+    name: "用户管理 - 禁用用户"
+    priority: "P1"
+    description: "验证可以禁用用户"
+    preconditions:
+      - "管理员已登录"
+      - "目标用户存在且处于启用状态"
+    test_steps:
+      - step: 1
+        action: "点击用户的编辑按钮"
+        click:
+          selector: ".user-row:first-child .edit-btn"
+      - step: 2
+        action: "修改用户状态为禁用"
+        click:
+          selector: "input[type='checkbox']:has-text('启用')"
+      - step: 3
+        action: "保存更改"
+        click:
+          selector: "button:has-text('保存')"
+        expected:
+          - "用户状态变为禁用"
+          - "显示成功提示"
+
+  TC-UI-ADMIN-003:
+    name: "用户管理 - 分配角色"
+    priority: "P1"
+    description: "验证可以为用户分配角色"
+    preconditions:
+      - "管理员已登录"
+      - "角色存在"
+    test_steps:
+      - step: 1
+        action: "点击用户的角色编辑"
+        click:
+          selector: ".user-row:first-child .role-btn"
+      - step: 2
+        action: "选择角色"
+        click:
+          selector: "input[value='developer']"
+      - step: 3
+        action: "确认分配"
+        click:
+          selector: "button:has-text('确认')"
+        expected:
+          - "用户角色更新"
+          - "显示成功提示"
+
+  TC-UI-ADMIN-004:
+    name: "用户管理 - 删除用户"
+    priority: "P1"
+    description: "验证可以删除用户"
+    preconditions:
+      - "管理员已登录"
+      - "目标用户存在"
+    test_steps:
+      - step: 1
+        action: "点击删除按钮"
+        click:
+          selector: ".user-row:last-child .delete-btn"
+      - step: 2
+        action: "确认删除"
+        click:
+          selector: "button:has-text('确认删除')"
+        expected:
+          - "用户从列表中移除"
+          - "显示删除成功提示"
+
+  TC-UI-ADMIN-005:
+    name: "角色管理页面"
+    priority: "P1"
+    description: "验证角色管理页面正确显示"
+    preconditions:
+      - "管理员已登录"
+      - "管理员具有 roles:read 权限"
+    test_steps:
+      - step: 1
+        action: "导航到角色管理"
+        navigate: "/admin/roles"
+        expected:
+          - "显示角色列表"
+          - "显示角色名称、描述、权限数量"
+          - "显示创建角色按钮"
+    elements:
+      - selector: ".role-list, table"
+        description: "角色列表"
+        expected: "visible"
+      - selector: "button:has-text('创建角色')"
+        description: "创建角色按钮"
+        expected: "visible"
+
+  TC-UI-ADMIN-006:
+    name: "角色管理 - 创建角色"
+    priority: "P1"
+    description: "验证可以创建新角色"
+    preconditions:
+      - "管理员已登录"
+      - "管理员具有 roles:create 权限"
+    test_steps:
+      - step: 1
+        action: "点击创建角色按钮"
+        click:
+          selector: "button:has-text('创建角色')"
+      - step: 2
+        action: "填写角色信息"
+        input:
+          selector: "input[name='name']"
+          value: "test-role-{{timestamp}}"
+      - step: 3
+        action: "填写描述"
+        input:
+          selector: "textarea[name='description']"
+          value: "测试角色描述"
+      - step: 4
+        action: "提交创建"
+        click:
+          selector: "button[type='submit']"
+        expected:
+          - "角色创建成功"
+          - "新角色出现在列表中"
+
+  TC-UI-ADMIN-007:
+    name: "角色管理 - 编辑权限"
+    priority: "P1"
+    description: "验证可以编辑角色权限"
+    preconditions:
+      - "管理员已登录"
+      - "角色存在"
+    test_steps:
+      - step: 1
+        action: "点击角色的权限编辑"
+        click:
+          selector: ".role-row:first-child .permission-btn"
+      - step: 2
+        action: "勾选权限"
+        click:
+          selector: "input[value='skills:read']"
+      - step: 3
+        action: "保存权限"
+        click:
+          selector: "button:has-text('保存')"
+        expected:
+          - "权限更新成功"
+          - "显示成功提示"
+
+  TC-UI-ADMIN-008:
+    name: "角色管理 - 删除角色"
+    priority: "P1"
+    description: "验证可以删除角色"
+    preconditions:
+      - "管理员已登录"
+      - "角色存在且非系统角色"
+    test_steps:
+      - step: 1
+        action: "点击删除按钮"
+        click:
+          selector: ".role-row:last-child .delete-btn"
+      - step: 2
+        action: "确认删除"
+        click:
+          selector: "button:has-text('确认删除')"
+        expected:
+          - "角色从列表中移除"
+
+  TC-UI-ADMIN-009:
+    name: "用户组管理页面"
+    priority: "P1"
+    description: "验证用户组管理页面正确显示"
+    preconditions:
+      - "管理员已登录"
+      - "管理员具有 groups:read 权限"
+    test_steps:
+      - step: 1
+        action: "导航到用户组管理"
+        navigate: "/admin/groups"
+        expected:
+          - "显示用户组树结构"
+          - "显示创建用户组按钮"
+          - "显示用户组成员信息"
+    elements:
+      - selector: ".group-tree, .tree"
+        description: "用户组树"
+        expected: "visible"
+      - selector: "button:has-text('创建用户组')"
+        description: "创建按钮"
+        expected: "visible"
+
+  TC-UI-ADMIN-010:
+    name: "用户组管理 - 创建用户组"
+    priority: "P1"
+    description: "验证可以创建用户组"
+    preconditions:
+      - "管理员已登录"
+      - "管理员具有 groups:create 权限"
+    test_steps:
+      - step: 1
+        action: "点击创建用户组按钮"
+        click:
+          selector: "button:has-text('创建用户组')"
+      - step: 2
+        action: "填写用户组信息"
+        input:
+          selector: "input[name='name']"
+          value: "Test-Team-{{timestamp}}"
+      - step: 3
+        action: "提交创建"
+        click:
+          selector: "button[type='submit']"
+        expected:
+          - "用户组创建成功"
+          - "新用户组出现在树中"
+
+  TC-UI-ADMIN-011:
+    name: "用户组管理 - 添加成员"
+    priority: "P1"
+    description: "验证可以为用户组添加成员"
+    preconditions:
+      - "管理员已登录"
+      - "用户组存在"
+      - "用户存在"
+    test_steps:
+      - step: 1
+        action: "选择用户组"
+        click:
+          selector: ".group-node:first-child"
+      - step: 2
+        action: "点击添加成员"
+        click:
+          selector: "button:has-text('添加成员')"
+      - step: 3
+        action: "选择用户"
+        click:
+          selector: ".user-select option:first-child"
+      - step: 4
+        action: "确认添加"
+        click:
+          selector: "button:has-text('确认')"
+        expected:
+          - "成员添加成功"
+          - "成员列表更新"
+
+  TC-UI-ADMIN-012:
+    name: "权限检查 - 未登录"
+    priority: "P0"
+    description: "验证未登录用户无法访问管理后台"
+    preconditions:
+      - "用户未登录"
+    test_steps:
+      - step: 1
+        action: "导航到管理后台"
+        navigate: "/admin"
+        expected:
+          - "页面重定向到登录页"
+          - "URL 包含 '/login'"
+
+  TC-UI-ADMIN-013:
+    name: "权限检查 - 普通用户"
+    priority: "P0"
+    description: "验证普通用户无法访问管理后台"
+    preconditions:
+      - "普通用户已登录"
+      - "用户无管理权限"
+    test_steps:
+      - step: 1
+        action: "导航到管理后台"
+        navigate: "/admin"
+        expected:
+          - "显示 403 无权限页面"
+          - "或重定向到首页"
+          - "显示无权限提示"
+
+  TC-UI-ADMIN-014:
+    name: "导航栏权限 - 未登录"
+    priority: "P1"
+    description: "验证未登录时导航栏不显示管理入口"
+    preconditions:
+      - "用户未登录"
+    test_steps:
+      - step: 1
+        action: "查看导航栏"
+        expected:
+          - "不显示 '管理' 或 '后台' 链接"
+          - "不显示用户菜单"
+
+  TC-UI-ADMIN-015:
+    name: "导航栏权限 - 普通用户"
+    priority: "P1"
+    description: "验证普通用户导航栏不显示管理入口"
+    preconditions:
+      - "普通用户已登录"
+      - "用户无管理权限"
+    test_steps:
+      - step: 1
+        action: "查看导航栏"
+        expected:
+          - "不显示 '管理' 或 '后台' 链接"
+          - "显示用户菜单"
+
+  TC-UI-ADMIN-016:
+    name: "导航栏权限 - 管理员"
+    priority: "P1"
+    description: "验证管理员导航栏显示管理入口"
+    preconditions:
+      - "管理员已登录"
+    test_steps:
+      - step: 1
+        action: "查看导航栏"
+        expected:
+          - "显示 '管理' 或 '后台' 链接"
+      - step: 2
+        action: "点击管理链接"
+        click:
+          selector: "a:has-text('管理')"
+        expected:
+          - "跳转到管理后台"
+
+  TC-UI-ADMIN-017:
+    name: "侧边栏导航"
+    priority: "P2"
+    description: "验证管理后台侧边栏导航功能"
+    preconditions:
+      - "管理员已登录"
+    test_steps:
+      - step: 1
+        action: "查看侧边栏"
+        expected:
+          - "显示用户管理链接"
+          - "显示角色管理链接"
+          - "显示用户组管理链接"
+      - step: 2
+        action: "点击角色管理"
+        click:
+          selector: "a:has-text('角色管理')"
+        expected:
+          - "跳转到角色管理页面"
+          - "侧边栏高亮当前页面"
+
+  TC-UI-ADMIN-018:
+    name: "表格搜索功能"
+    priority: "P2"
+    description: "验证用户管理表格搜索功能"
+    preconditions:
+      - "管理员已登录"
+      - "存在多个用户"
+    test_steps:
+      - step: 1
+        action: "在搜索框输入关键词"
+        input:
+          selector: ".table-search input"
+          value: "admin"
+      - step: 2
+        action: "执行搜索"
+        operation: "press_enter"
+        expected:
+          - "表格显示匹配的用户"
+          - "用户名包含搜索关键词"
+
+  TC-UI-ADMIN-019:
+    name: "分页功能"
+    priority: "P2"
+    description: "验证管理后台分页功能"
+    preconditions:
+      - "管理员已登录"
+      - "存在大量数据"
+    test_steps:
+      - step: 1
+        action: "查看分页控件"
+        expected:
+          - "显示分页信息（当前页/总页数）"
+          - "显示上一页/下一页按钮"
+      - step: 2
+        action: "点击下一页"
+        click:
+          selector: ".pagination-next"
+        expected:
+          - "表格加载下一页数据"

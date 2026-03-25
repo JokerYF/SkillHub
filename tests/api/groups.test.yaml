@@ -1,0 +1,474 @@
+# 用户组 API 测试用例
+# Skills Intelligence Hub - Phase 1 MVP
+
+metadata:
+  suite: groups
+  version: "1.0.0"
+  created: "2026-03-25"
+  author: "tester"
+
+test_cases:
+  TC-GROUP-001:
+    name: "获取用户组列表"
+    priority: "P1"
+    endpoint: "/api/groups"
+    method: "GET"
+    description: "验证可以获取用户组列表"
+    preconditions:
+      - "数据库中存在用户组"
+    test_steps:
+      - step: 1
+        action: "获取用户组列表"
+        request:
+          headers: {}
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+            items:
+              id: "{{group_id}}"
+              name: "{{group_name}}"
+              description: "{{description}}"
+              parent_id: "{{parent_id}}"
+
+  TC-GROUP-002:
+    name: "获取用户组列表 - 按父组筛选"
+    priority: "P2"
+    endpoint: "/api/groups"
+    method: "GET"
+    description: "验证可以按父组筛选子组"
+    preconditions:
+      - "存在父子用户组关系"
+    test_steps:
+      - step: 1
+        action: "按父组筛选"
+        request:
+          headers: {}
+          query_params:
+            parent_id: "{{parent_group_id}}"
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+
+  TC-GROUP-003:
+    name: "获取用户组树"
+    priority: "P1"
+    endpoint: "/api/groups/tree"
+    method: "GET"
+    description: "验证可以获取用户组树结构"
+    preconditions:
+      - "存在用户组层级结构"
+    test_steps:
+      - step: 1
+        action: "获取用户组树"
+        request:
+          headers: {}
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+            items:
+              id: "{{group_id}}"
+              name: "{{group_name}}"
+              children:
+                type: "array"
+
+  TC-GROUP-004:
+    name: "创建用户组 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/groups"
+    method: "POST"
+    description: "验证创建用户组需要 groups:create 权限"
+    preconditions:
+      - "管理员已登录"
+    test_steps:
+      - step: 1
+        action: "创建新用户组"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          body:
+            name: "test-group-{{timestamp}}"
+            description: "测试用户组"
+            parent_id: null
+        expected:
+          status_code: 200
+          response:
+            name: "test-group-{{timestamp}}"
+            description: "测试用户组"
+
+  TC-GROUP-005:
+    name: "创建用户组 - 无权限"
+    priority: "P1"
+    endpoint: "/api/groups"
+    method: "POST"
+    description: "验证无权限用户无法创建用户组"
+    preconditions:
+      - "普通用户已登录"
+    test_steps:
+      - step: 1
+        action: "尝试创建用户组"
+        request:
+          headers:
+            Authorization: "Bearer {{normal_user_token}}"
+            Content-Type: "application/json"
+          body:
+            name: "hacker-group"
+            description: "尝试创建"
+        expected:
+          status_code: 403
+
+  TC-GROUP-006:
+    name: "创建用户组 - 名称重复"
+    priority: "P2"
+    endpoint: "/api/groups"
+    method: "POST"
+    description: "验证用户组名称不能重复"
+    preconditions:
+      - "管理员已登录"
+      - "用户组 Engineering 已存在"
+    test_steps:
+      - step: 1
+        action: "尝试创建重复名称的用户组"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          body:
+            name: "Engineering"
+            description: "重复的用户组"
+        expected:
+          status_code: 409
+          response:
+            error: "Conflict"
+            message: "用户组名称已存在"
+
+  TC-GROUP-007:
+    name: "创建用户组 - 指定父组"
+    priority: "P1"
+    endpoint: "/api/groups"
+    method: "POST"
+    description: "验证可以创建子组"
+    preconditions:
+      - "管理员已登录"
+      - "父组存在"
+    test_steps:
+      - step: 1
+        action: "创建子组"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          body:
+            name: "Backend-Team"
+            description: "后端团队"
+            parent_id: "{{parent_group_id}}"
+        expected:
+          status_code: 200
+          response:
+            name: "Backend-Team"
+            parent_id: "{{parent_group_id}}"
+
+  TC-GROUP-008:
+    name: "创建用户组 - 父组不存在"
+    priority: "P2"
+    endpoint: "/api/groups"
+    method: "POST"
+    description: "验证父组不存在时返回错误"
+    preconditions:
+      - "管理员已登录"
+    test_steps:
+      - step: 1
+        action: "指定不存在的父组"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          body:
+            name: "Test-Group"
+            description: "测试"
+            parent_id: "00000000-0000-0000-0000-000000000000"
+        expected:
+          status_code: 400
+          response:
+            error: "BadRequest"
+            message: "父用户组不存在"
+
+  TC-GROUP-009:
+    name: "获取用户组详情"
+    priority: "P1"
+    endpoint: "/api/groups/{id}"
+    method: "GET"
+    description: "验证可以获取用户组详情"
+    preconditions:
+      - "用户组存在"
+    test_steps:
+      - step: 1
+        action: "获取用户组详情"
+        request:
+          headers: {}
+          path_params:
+            id: "{{group_id}}"
+        expected:
+          status_code: 200
+          response:
+            id: "{{group_id}}"
+            name: "{{group_name}}"
+            description: "{{description}}"
+            parent_id: "{{parent_id}}"
+            member_count: "{{member_count}}"
+
+  TC-GROUP-010:
+    name: "更新用户组 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/groups/{id}"
+    method: "PUT"
+    description: "验证更新用户组需要 groups:update 权限"
+    preconditions:
+      - "管理员已登录"
+      - "用户组存在"
+    test_steps:
+      - step: 1
+        action: "更新用户组"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{group_id}}"
+          body:
+            name: "Updated-Group-Name"
+            description: "更新后的描述"
+        expected:
+          status_code: 200
+          response:
+            name: "Updated-Group-Name"
+            description: "更新后的描述"
+
+  TC-GROUP-011:
+    name: "更新用户组 - 无权限"
+    priority: "P1"
+    endpoint: "/api/groups/{id}"
+    method: "PUT"
+    description: "验证无权限用户无法更新用户组"
+    preconditions:
+      - "普通用户已登录"
+    test_steps:
+      - step: 1
+        action: "尝试更新用户组"
+        request:
+          headers:
+            Authorization: "Bearer {{normal_user_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{group_id}}"
+          body:
+            name: "Hacked-Group"
+        expected:
+          status_code: 403
+
+  TC-GROUP-012:
+    name: "更新用户组 - 不能设自己为父组"
+    priority: "P2"
+    endpoint: "/api/groups/{id}"
+    method: "PUT"
+    description: "验证用户组不能设自己为父组"
+    preconditions:
+      - "管理员已登录"
+      - "用户组存在"
+    test_steps:
+      - step: 1
+        action: "尝试设自己为父组"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{group_id}}"
+          body:
+            parent_id: "{{group_id}}"
+        expected:
+          status_code: 400
+          response:
+            error: "BadRequest"
+            message: "不能将自己设为父组"
+
+  TC-GROUP-013:
+    name: "删除用户组 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/groups/{id}"
+    method: "DELETE"
+    description: "验证删除用户组需要 groups:delete 权限"
+    preconditions:
+      - "管理员已登录"
+      - "用户组存在"
+    test_steps:
+      - step: 1
+        action: "删除用户组"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+          path_params:
+            id: "{{group_to_delete_id}}"
+        expected:
+          status_code: 204
+
+  TC-GROUP-014:
+    name: "删除用户组 - 无权限"
+    priority: "P1"
+    endpoint: "/api/groups/{id}"
+    method: "DELETE"
+    description: "验证无权限用户无法删除用户组"
+    preconditions:
+      - "普通用户已登录"
+    test_steps:
+      - step: 1
+        action: "尝试删除用户组"
+        request:
+          headers:
+            Authorization: "Bearer {{normal_user_token}}"
+          path_params:
+            id: "{{group_id}}"
+        expected:
+          status_code: 403
+
+  TC-GROUP-015:
+    name: "获取用户组成员"
+    priority: "P1"
+    endpoint: "/api/groups/{id}/members"
+    method: "GET"
+    description: "验证可以获取用户组成员列表"
+    preconditions:
+      - "用户组存在"
+      - "用户组有成员"
+    test_steps:
+      - step: 1
+        action: "获取用户组成员"
+        request:
+          headers: {}
+          path_params:
+            id: "{{group_id}}"
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+            items:
+              id: "{{user_id}}"
+              username: "{{username}}"
+              email: "{{email}}"
+              is_primary: true
+
+  TC-GROUP-016:
+    name: "添加成员到用户组 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/groups/{id}/members"
+    method: "POST"
+    description: "验证添加成员需要 groups:update 权限"
+    preconditions:
+      - "管理员已登录"
+      - "用户组存在"
+      - "用户存在"
+    test_steps:
+      - step: 1
+        action: "添加成员"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{group_id}}"
+          body:
+            user_id: "{{user_id}}"
+            is_primary: false
+        expected:
+          status_code: 204
+
+  TC-GROUP-017:
+    name: "添加成员 - 用户不存在"
+    priority: "P2"
+    endpoint: "/api/groups/{id}/members"
+    method: "POST"
+    description: "验证添加不存在的用户返回错误"
+    preconditions:
+      - "管理员已登录"
+      - "用户组存在"
+    test_steps:
+      - step: 1
+        action: "添加不存在的用户"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{group_id}}"
+          body:
+            user_id: "00000000-0000-0000-0000-000000000000"
+        expected:
+          status_code: 404
+          response:
+            error: "NotFound"
+            message: "用户不存在"
+
+  TC-GROUP-018:
+    name: "移除用户组成员 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/groups/{id}/members/{user_id}"
+    method: "DELETE"
+    description: "验证移除成员需要 groups:update 权限"
+    preconditions:
+      - "管理员已登录"
+      - "用户在组中"
+    test_steps:
+      - step: 1
+        action: "移除成员"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+          path_params:
+            id: "{{group_id}}"
+            user_id: "{{user_id}}"
+        expected:
+          status_code: 204
+
+  TC-GROUP-019:
+    name: "获取用户所属用户组"
+    priority: "P1"
+    endpoint: "/api/users/{id}/groups"
+    method: "GET"
+    description: "验证可以获取用户所属的用户组"
+    preconditions:
+      - "用户存在"
+      - "用户属于某些用户组"
+    test_steps:
+      - step: 1
+        action: "获取用户的用户组"
+        request:
+          headers: {}
+          path_params:
+            id: "{{user_id}}"
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+            items:
+              id: "{{group_id}}"
+              name: "{{group_name}}"
+
+  TC-GROUP-020:
+    name: "获取用户组详情 - 不存在"
+    priority: "P2"
+    endpoint: "/api/groups/{id}"
+    method: "GET"
+    description: "验证获取不存在的用户组返回 404"
+    preconditions: []
+    test_steps:
+      - step: 1
+        action: "获取不存在的用户组"
+        request:
+          headers: {}
+          path_params:
+            id: "00000000-0000-0000-0000-000000000000"
+        expected:
+          status_code: 404

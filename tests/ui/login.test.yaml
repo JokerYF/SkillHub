@@ -1,0 +1,237 @@
+# 登录页面 UI 测试用例
+# Skills Intelligence Hub - Phase 1 MVP
+
+metadata:
+  suite: login
+  version: "1.0.0"
+  created: "2026-03-25"
+  author: "tester"
+
+page_url: "/login"
+
+test_cases:
+  TC-UI-LOGIN-001:
+    name: "页面元素显示"
+    priority: "P0"
+    description: "验证登录页面所有必要元素正确显示"
+    preconditions:
+      - "应用已启动"
+      - "用户未登录"
+    test_steps:
+      - step: 1
+        action: "导航到登录页面"
+        expected:
+          - "页面标题显示 '登录' 或 'Login'"
+          - "用户名输入框存在"
+          - "密码输入框存在"
+          - "登录按钮存在"
+          - "注册链接存在"
+    elements:
+      - selector: "input[type='text']"
+        description: "用户名输入框"
+        expected: "visible"
+      - selector: "input[type='password']"
+        description: "密码输入框"
+        expected: "visible"
+      - selector: "button[type='submit']"
+        description: "登录按钮"
+        expected: "visible"
+      - selector: "a[href*='register']"
+        description: "注册链接"
+        expected: "visible"
+
+  TC-UI-LOGIN-002:
+    name: "正常登录流程"
+    priority: "P0"
+    description: "验证用户可以正常登录"
+    preconditions:
+      - "测试用户已创建"
+      - "用户名: testuser"
+      - "密码: Test@123456"
+    test_steps:
+      - step: 1
+        action: "输入用户名"
+        input:
+          selector: "input[placeholder*='用户名']"
+          value: "testuser"
+      - step: 2
+        action: "输入密码"
+        input:
+          selector: "input[placeholder*='密码']"
+          value: "Test@123456"
+      - step: 3
+        action: "点击登录按钮"
+        click:
+          selector: "button[type='submit']"
+        expected:
+          - "页面跳转到技能市场页面"
+          - "导航栏显示用户名"
+          - "显示退出登录按钮"
+    validation:
+      - "URL 变为 '/' 或 '/market'"
+      - "存在用户头像或用户名显示"
+
+  TC-UI-LOGIN-003:
+    name: "登录错误提示 - 密码错误"
+    priority: "P1"
+    description: "验证密码错误时显示正确提示"
+    preconditions:
+      - "测试用户已创建"
+    test_steps:
+      - step: 1
+        action: "输入正确用户名"
+        input:
+          selector: "input[placeholder*='用户名']"
+          value: "testuser"
+      - step: 2
+        action: "输入错误密码"
+        input:
+          selector: "input[placeholder*='密码']"
+          value: "WrongPassword"
+      - step: 3
+        action: "点击登录按钮"
+        click:
+          selector: "button[type='submit']"
+        expected:
+          - "显示错误提示信息"
+          - "提示内容包含 '用户名或密码错误' 或类似文字"
+          - "页面保持在登录页"
+    elements:
+      - selector: ".error-message, .alert-danger, [role='alert']"
+        description: "错误提示"
+        expected: "visible"
+
+  TC-UI-LOGIN-004:
+    name: "登录错误提示 - 用户不存在"
+    priority: "P1"
+    description: "验证用户不存在时显示正确提示"
+    preconditions: []
+    test_steps:
+      - step: 1
+        action: "输入不存在的用户名"
+        input:
+          selector: "input[placeholder*='用户名']"
+          value: "nonexistent_user_12345"
+      - step: 2
+        action: "输入任意密码"
+        input:
+          selector: "input[placeholder*='密码']"
+          value: "AnyPassword123"
+      - step: 3
+        action: "点击登录按钮"
+        click:
+          selector: "button[type='submit']"
+        expected:
+          - "显示错误提示信息"
+          - "提示内容包含 '用户名或密码错误' 或类似文字"
+
+  TC-UI-LOGIN-005:
+    name: "表单验证 - 空用户名"
+    priority: "P2"
+    description: "验证用户名为空时显示验证提示"
+    preconditions: []
+    test_steps:
+      - step: 1
+        action: "不输入用户名"
+        input:
+          selector: "input[placeholder*='用户名']"
+          value: ""
+      - step: 2
+        action: "输入密码"
+        input:
+          selector: "input[placeholder*='密码']"
+          value: "Test@123456"
+      - step: 3
+        action: "点击登录按钮"
+        click:
+          selector: "button[type='submit']"
+        expected:
+          - "显示用户名必填提示"
+          - "页面保持在登录页"
+
+  TC-UI-LOGIN-006:
+    name: "表单验证 - 空密码"
+    priority: "P2"
+    description: "验证密码为空时显示验证提示"
+    preconditions: []
+    test_steps:
+      - step: 1
+        action: "输入用户名"
+        input:
+          selector: "input[placeholder*='用户名']"
+          value: "testuser"
+      - step: 2
+        action: "不输入密码"
+        input:
+          selector: "input[placeholder*='密码']"
+          value: ""
+      - step: 3
+        action: "点击登录按钮"
+        click:
+          selector: "button[type='submit']"
+        expected:
+          - "显示密码必填提示"
+          - "页面保持在登录页"
+
+  TC-UI-LOGIN-007:
+    name: "跳转到注册页面"
+    priority: "P2"
+    description: "验证可以跳转到注册页面"
+    preconditions: []
+    test_steps:
+      - step: 1
+        action: "点击注册链接"
+        click:
+          selector: "a[href*='register']"
+        expected:
+          - "页面跳转到注册页面"
+          - "URL 包含 'register'"
+
+  TC-UI-LOGIN-008:
+    name: "未登录状态导航"
+    priority: "P1"
+    description: "验证未登录时访问受保护页面会重定向到登录页"
+    preconditions:
+      - "用户未登录"
+    test_steps:
+      - step: 1
+        action: "直接访问管理后台"
+        navigate: "/admin"
+        expected:
+          - "页面重定向到登录页"
+          - "URL 变为 '/login' 或包含 redirect 参数"
+
+  TC-UI-LOGIN-009:
+    name: "登录后保持会话"
+    priority: "P1"
+    description: "验证登录后刷新页面保持会话"
+    preconditions:
+      - "测试用户已创建"
+    test_steps:
+      - step: 1
+        action: "正常登录"
+      - step: 2
+        action: "刷新页面"
+        operation: "refresh"
+        expected:
+          - "用户仍然保持登录状态"
+          - "不跳转到登录页"
+
+  TC-UI-LOGIN-010:
+    name: "退出登录"
+    priority: "P1"
+    description: "验证用户可以正常退出登录"
+    preconditions:
+      - "用户已登录"
+    test_steps:
+      - step: 1
+        action: "点击用户菜单"
+        click:
+          selector: ".user-menu, .dropdown-toggle"
+      - step: 2
+        action: "点击退出登录"
+        click:
+          selector: "button:has-text('退出'), a:has-text('退出')"
+        expected:
+          - "页面跳转到登录页"
+          - "访问受保护页面重定向到登录页"

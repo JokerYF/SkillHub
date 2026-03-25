@@ -5,6 +5,7 @@ export interface Role {
   name: string
   description?: string
   permissions: string[]
+  is_system?: boolean
   created_at: string
   updated_at: string
 }

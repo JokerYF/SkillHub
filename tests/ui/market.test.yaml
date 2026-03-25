@@ -1,0 +1,277 @@
+# 技能市场 UI 测试用例
+# Skills Intelligence Hub - Phase 1 MVP
+
+metadata:
+  suite: market
+  version: "1.0.0"
+  created: "2026-03-25"
+  author: "tester"
+
+page_url: "/"
+
+test_cases:
+  TC-UI-MARKET-001:
+    name: "技能列表显示"
+    priority: "P0"
+    description: "验证技能市场页面正确显示技能列表"
+    preconditions:
+      - "数据库中存在公开技能"
+    test_steps:
+      - step: 1
+        action: "导航到技能市场"
+        navigate: "/"
+        expected:
+          - "页面标题显示 '技能市场' 或类似文字"
+          - "显示技能卡片列表"
+          - "每个卡片包含技能名称、描述、标签"
+    elements:
+      - selector: ".skill-card, .skill-item"
+        description: "技能卡片"
+        expected: "visible"
+      - selector: ".skill-name, .skill-title"
+        description: "技能名称"
+        expected: "visible"
+      - selector: ".skill-description"
+        description: "技能描述"
+        expected: "visible"
+      - selector: ".skill-tags, .tag"
+        description: "技能标签"
+        expected: "visible"
+
+  TC-UI-MARKET-002:
+    name: "技能搜索 - 关键词"
+    priority: "P0"
+    description: "验证可以按关键词搜索技能"
+    preconditions:
+      - "数据库中存在相关技能"
+    test_steps:
+      - step: 1
+        action: "在搜索框输入关键词"
+        input:
+          selector: "input[placeholder*='搜索'], .search-input"
+          value: "python"
+      - step: 2
+        action: "按回车或点击搜索按钮"
+        operation: "press_enter"
+        expected:
+          - "显示搜索结果"
+          - "结果中包含匹配 'python' 的技能"
+          - "结果列表更新"
+
+  TC-UI-MARKET-003:
+    name: "技能搜索 - 无结果"
+    priority: "P2"
+    description: "验证搜索无结果时显示空状态"
+    preconditions: []
+    test_steps:
+      - step: 1
+        action: "搜索不存在的关键词"
+        input:
+          selector: "input[placeholder*='搜索'], .search-input"
+          value: "xyznonexistent12345"
+      - step: 2
+        action: "执行搜索"
+        operation: "press_enter"
+        expected:
+          - "显示空状态提示"
+          - "提示内容包含 '没有找到' 或类似文字"
+
+  TC-UI-MARKET-004:
+    name: "技能搜索 - 清除搜索"
+    priority: "P2"
+    description: "验证可以清除搜索恢复完整列表"
+    preconditions:
+      - "已执行搜索"
+    test_steps:
+      - step: 1
+        action: "清空搜索框"
+        input:
+          selector: "input[placeholder*='搜索'], .search-input"
+          value: ""
+      - step: 2
+        action: "执行搜索"
+        operation: "press_enter"
+        expected:
+          - "显示完整技能列表"
+
+  TC-UI-MARKET-005:
+    name: "技能筛选 - 按标签"
+    priority: "P1"
+    description: "验证可以按标签筛选技能"
+    preconditions:
+      - "存在带标签的技能"
+    test_steps:
+      - step: 1
+        action: "点击标签筛选"
+        click:
+          selector: ".tag-filter:has-text('python')"
+        expected:
+          - "显示筛选结果"
+          - "结果中技能包含 'python' 标签"
+
+  TC-UI-MARKET-006:
+    name: "技能排序"
+    priority: "P2"
+    description: "验证可以按不同方式排序"
+    preconditions:
+      - "存在多个技能"
+    test_steps:
+      - step: 1
+        action: "选择排序方式"
+        click:
+          selector: ".sort-dropdown, .sort-select"
+      - step: 2
+        action: "选择按下载量排序"
+        click:
+          selector: "option:has-text('下载量'), li:has-text('下载量')"
+        expected:
+          - "技能列表按下载量排序"
+
+  TC-UI-MARKET-007:
+    name: "技能详情页 - 导航"
+    priority: "P0"
+    description: "验证可以导航到技能详情页"
+    preconditions:
+      - "存在技能"
+    test_steps:
+      - step: 1
+        action: "点击技能卡片"
+        click:
+          selector: ".skill-card:first-child"
+        expected:
+          - "页面跳转到技能详情页"
+          - "URL 包含技能 slug"
+          - "显示技能详细信息"
+
+  TC-UI-MARKET-008:
+    name: "技能详情页 - 内容显示"
+    priority: "P0"
+    description: "验证技能详情页正确显示内容"
+    preconditions:
+      - "技能存在且有版本"
+    test_steps:
+      - step: 1
+        action: "导航到技能详情页"
+        navigate: "/skill/python-security"
+        expected:
+          - "显示技能名称"
+          - "显示技能描述"
+          - "显示作者信息"
+          - "显示下载量"
+          - "显示标签列表"
+          - "显示版本信息"
+          - "显示下载按钮"
+    elements:
+      - selector: ".skill-title, h1"
+        description: "技能名称"
+        expected: "visible"
+      - selector: ".skill-author, .author"
+        description: "作者信息"
+        expected: "visible"
+      - selector: ".skill-downloads, .downloads"
+        description: "下载量"
+        expected: "visible"
+      - selector: ".download-btn, button:has-text('下载')"
+        description: "下载按钮"
+        expected: "visible"
+
+  TC-UI-MARKET-009:
+    name: "技能下载 - 未登录"
+    priority: "P1"
+    description: "验证未登录用户可以下载公开技能"
+    preconditions:
+      - "用户未登录"
+      - "技能公开"
+    test_steps:
+      - step: 1
+        action: "点击下载按钮"
+        click:
+          selector: ".download-btn, button:has-text('下载')"
+        expected:
+          - "开始下载或显示下载内容"
+
+  TC-UI-MARKET-010:
+    name: "技能版本选择"
+    priority: "P1"
+    description: "验证可以选择不同版本下载"
+    preconditions:
+      - "技能有多个版本"
+    test_steps:
+      - step: 1
+        action: "点击版本选择器"
+        click:
+          selector: ".version-select, .version-dropdown"
+      - step: 2
+        action: "选择特定版本"
+        click:
+          selector: "option:has-text('v1.0.0'), li:has-text('v1.0.0')"
+        expected:
+          - "显示选中版本的内容"
+          - "下载按钮关联选中版本"
+
+  TC-UI-MARKET-011:
+    name: "分页功能"
+    priority: "P2"
+    description: "验证技能列表分页功能"
+    preconditions:
+      - "存在大量技能（超过每页数量）"
+    test_steps:
+      - step: 1
+        action: "滚动到底部"
+        operation: "scroll_to_bottom"
+        expected:
+          - "显示分页或加载更多按钮"
+      - step: 2
+        action: "点击下一页或加载更多"
+        click:
+          selector: ".pagination-next, .load-more"
+        expected:
+          - "加载更多技能"
+          - "技能列表增加"
+
+  TC-UI-MARKET-012:
+    name: "响应式布局 - 移动端"
+    priority: "P2"
+    description: "验证移动端响应式布局"
+    preconditions: []
+    test_steps:
+      - step: 1
+        action: "调整视口大小为移动端"
+        resize:
+          width: 375
+          height: 667
+        expected:
+          - "技能卡片单列显示"
+          - "导航栏显示汉堡菜单"
+          - "搜索框适应宽度"
+
+  TC-UI-MARKET-013:
+    name: "技能不存在 - 404"
+    priority: "P2"
+    description: "验证访问不存在的技能显示 404"
+    preconditions: []
+    test_steps:
+      - step: 1
+        action: "访问不存在的技能"
+        navigate: "/skill/nonexistent-skill-12345"
+        expected:
+          - "显示 404 页面"
+          - "提示技能不存在"
+
+  TC-UI-MARKET-014:
+    name: "技能创建入口"
+    priority: "P1"
+    description: "验证已登录用户可以看到创建技能入口"
+    preconditions:
+      - "用户已登录"
+    test_steps:
+      - step: 1
+        action: "查看导航栏"
+        expected:
+          - "显示 '创建技能' 或 '上传技能' 按钮"
+      - step: 2
+        action: "点击创建技能按钮"
+        click:
+          selector: "button:has-text('创建'), a:has-text('创建')"
+        expected:
+          - "跳转到技能创建页面"

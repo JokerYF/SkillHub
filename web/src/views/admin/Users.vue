@@ -41,15 +41,6 @@ const isRoleModalOpen = ref(false)
 const selectedRoleId = ref('')
 const operationLoading = ref(false)
 
-// Map role names to role IDs for API calls
-const roleNameToId = computed(() => {
-  const map = new Map<string, string>()
-  for (const role of roles.value) {
-    map.set(role.name, role.id)
-  }
-  return map
-})
-
 // Map role IDs to role names for display
 const roleIdToName = computed(() => {
   const map = new Map<string, string>()

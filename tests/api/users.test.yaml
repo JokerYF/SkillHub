@@ -1,0 +1,415 @@
+# 用户 API 测试用例
+# Skills Intelligence Hub - Phase 1 MVP
+
+metadata:
+  suite: users
+  version: "1.0.0"
+  created: "2026-03-25"
+  author: "tester"
+
+test_cases:
+  TC-USER-001:
+    name: "获取用户列表 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/users"
+    method: "GET"
+    description: "验证需要权限才能获取用户列表"
+    preconditions:
+      - "用户已登录且有 users:read 权限"
+    test_steps:
+      - step: 1
+        action: "获取用户列表"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+            items:
+              id: "{{user_id}}"
+              username: "{{username}}"
+              email: "{{email}}"
+              is_active: true
+              roles:
+                type: "array"
+
+  TC-USER-002:
+    name: "获取用户列表 - 无权限"
+    priority: "P1"
+    endpoint: "/api/users"
+    method: "GET"
+    description: "验证无权限用户无法获取用户列表"
+    preconditions:
+      - "用户已登录但无 users:read 权限"
+    test_steps:
+      - step: 1
+        action: "尝试获取用户列表"
+        request:
+          headers:
+            Authorization: "Bearer {{normal_user_token}}"
+        expected:
+          status_code: 403
+
+  TC-USER-003:
+    name: "获取用户详情 - 本人"
+    priority: "P0"
+    endpoint: "/api/users/{id}"
+    method: "GET"
+    description: "验证用户可以获取自己的详情"
+    preconditions:
+      - "用户已登录"
+    test_steps:
+      - step: 1
+        action: "获取自己的详情"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+          path_params:
+            id: "{{current_user_id}}"
+        expected:
+          status_code: 200
+          response:
+            id: "{{current_user_id}}"
+            username: "{{username}}"
+            email: "{{email}}"
+            is_active: true
+            roles:
+              type: "array"
+
+  TC-USER-004:
+    name: "获取用户详情 - 非本人需要权限"
+    priority: "P1"
+    endpoint: "/api/users/{id}"
+    method: "GET"
+    description: "验证非本人获取用户详情需要权限"
+    preconditions:
+      - "用户已登录"
+      - "用户无 users:read 权限"
+      - "目标用户 ID 与当前用户不同"
+    test_steps:
+      - step: 1
+        action: "尝试获取他人详情"
+        request:
+          headers:
+            Authorization: "Bearer {{normal_user_token}}"
+          path_params:
+            id: "{{other_user_id}}"
+        expected:
+          status_code: 403
+
+  TC-USER-005:
+    name: "获取用户详情 - 管理员访问他人"
+    priority: "P1"
+    endpoint: "/api/users/{id}"
+    method: "GET"
+    description: "验证管理员可以获取任何用户详情"
+    preconditions:
+      - "管理员已登录"
+    test_steps:
+      - step: 1
+        action: "管理员获取其他用户详情"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+          path_params:
+            id: "{{other_user_id}}"
+        expected:
+          status_code: 200
+          response:
+            id: "{{other_user_id}}"
+            username: "{{username}}"
+
+  TC-USER-006:
+    name: "更新用户 - 本人"
+    priority: "P0"
+    endpoint: "/api/users/{id}"
+    method: "PUT"
+    description: "验证用户可以更新自己的信息"
+    preconditions:
+      - "用户已登录"
+    test_steps:
+      - step: 1
+        action: "更新自己的信息"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{current_user_id}}"
+          body:
+            username: "new_username"
+            email: "new_email@example.com"
+        expected:
+          status_code: 200
+          response:
+            username: "new_username"
+            email: "new_email@example.com"
+
+  TC-USER-007:
+    name: "更新用户 - 非本人需要权限"
+    priority: "P1"
+    endpoint: "/api/users/{id}"
+    method: "PUT"
+    description: "验证非本人更新用户需要权限"
+    preconditions:
+      - "用户已登录但无 users:update 权限"
+    test_steps:
+      - step: 1
+        action: "尝试更新他人信息"
+        request:
+          headers:
+            Authorization: "Bearer {{normal_user_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{other_user_id}}"
+          body:
+            username: "hacked_username"
+        expected:
+          status_code: 403
+
+  TC-USER-008:
+    name: "更新用户 - 管理员可禁用用户"
+    priority: "P1"
+    endpoint: "/api/users/{id}"
+    method: "PUT"
+    description: "验证管理员可以禁用用户"
+    preconditions:
+      - "管理员已登录"
+    test_steps:
+      - step: 1
+        action: "禁用用户"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{target_user_id}}"
+          body:
+            is_active: false
+        expected:
+          status_code: 200
+          response:
+            is_active: false
+
+  TC-USER-009:
+    name: "删除用户 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/users/{id}"
+    method: "DELETE"
+    description: "验证删除用户需要 users:delete 权限"
+    preconditions:
+      - "管理员已登录"
+    test_steps:
+      - step: 1
+        action: "删除用户"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+          path_params:
+            id: "{{user_to_delete_id}}"
+        expected:
+          status_code: 204
+    postconditions:
+      - "用户记录已删除或标记为删除"
+
+  TC-USER-010:
+    name: "删除用户 - 无权限"
+    priority: "P1"
+    endpoint: "/api/users/{id}"
+    method: "DELETE"
+    description: "验证无权限用户无法删除用户"
+    preconditions:
+      - "普通用户已登录"
+    test_steps:
+      - step: 1
+        action: "尝试删除用户"
+        request:
+          headers:
+            Authorization: "Bearer {{normal_user_token}}"
+          path_params:
+            id: "{{other_user_id}}"
+        expected:
+          status_code: 403
+
+  TC-USER-011:
+    name: "分配角色 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/users/{id}/roles"
+    method: "POST"
+    description: "验证分配角色需要 roles:manage 权限"
+    preconditions:
+      - "管理员已登录"
+      - "目标用户存在"
+      - "角色存在"
+    test_steps:
+      - step: 1
+        action: "为用户分配角色"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{target_user_id}}"
+          body:
+            role: "developer"
+        expected:
+          status_code: 204
+    postconditions:
+      - "用户拥有指定角色"
+
+  TC-USER-012:
+    name: "分配角色 - 无权限"
+    priority: "P1"
+    endpoint: "/api/users/{id}/roles"
+    method: "POST"
+    description: "验证无权限用户无法分配角色"
+    preconditions:
+      - "普通用户已登录"
+    test_steps:
+      - step: 1
+        action: "尝试分配角色"
+        request:
+          headers:
+            Authorization: "Bearer {{normal_user_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{other_user_id}}"
+          body:
+            role: "admin"
+        expected:
+          status_code: 403
+
+  TC-USER-013:
+    name: "移除角色 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/users/{id}/roles/{role}"
+    method: "DELETE"
+    description: "验证移除角色需要 roles:manage 权限"
+    preconditions:
+      - "管理员已登录"
+      - "目标用户有指定角色"
+    test_steps:
+      - step: 1
+        action: "移除用户角色"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+          path_params:
+            id: "{{target_user_id}}"
+            role: "developer"
+        expected:
+          status_code: 204
+
+  TC-USER-014:
+    name: "获取用户角色列表"
+    priority: "P1"
+    endpoint: "/api/users/{id}/roles"
+    method: "GET"
+    description: "验证可以获取用户的角色列表"
+    preconditions:
+      - "用户已登录"
+      - "查询本人或具有 users:read 权限"
+    test_steps:
+      - step: 1
+        action: "获取用户角色"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+          path_params:
+            id: "{{current_user_id}}"
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+            items: "string"
+
+  TC-USER-015:
+    name: "获取当前用户技能列表"
+    priority: "P1"
+    endpoint: "/api/users/me/skills"
+    method: "GET"
+    description: "验证可以获取当前用户创建的技能列表"
+    preconditions:
+      - "用户已登录"
+      - "用户创建过技能"
+    test_steps:
+      - step: 1
+        action: "获取我的技能"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+            items:
+              id: "{{skill_id}}"
+              name: "{{skill_name}}"
+              author_id: "{{current_user_id}}"
+
+  TC-USER-016:
+    name: "获取当前用户信息 - 通过 me"
+    priority: "P0"
+    endpoint: "/api/users/me/profile"
+    method: "GET"
+    description: "验证可以通过 /users/me/profile 获取当前用户信息"
+    preconditions:
+      - "用户已登录"
+    test_steps:
+      - step: 1
+        action: "获取我的信息"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+        expected:
+          status_code: 200
+          response:
+            id: "{{user_id}}"
+            username: "{{username}}"
+            email: "{{email}}"
+
+  TC-USER-017:
+    name: "获取用户详情 - 用户不存在"
+    priority: "P2"
+    endpoint: "/api/users/{id}"
+    method: "GET"
+    description: "验证获取不存在的用户返回 404"
+    preconditions:
+      - "管理员已登录"
+    test_steps:
+      - step: 1
+        action: "获取不存在的用户"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+          path_params:
+            id: "00000000-0000-0000-0000-000000000000"
+        expected:
+          status_code: 404
+
+  TC-USER-018:
+    name: "更新用户 - 用户名重复"
+    priority: "P2"
+    endpoint: "/api/users/{id}"
+    method: "PUT"
+    description: "验证更新用户名时检查重复"
+    preconditions:
+      - "用户已登录"
+      - "另一个用户已存在"
+    test_steps:
+      - step: 1
+        action: "尝试使用已存在的用户名"
+        request:
+          headers:
+            Authorization: "Bearer {{valid_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{current_user_id}}"
+          body:
+            username: "{{existing_username}}"
+        expected:
+          status_code: 409
+          response:
+            error: "Conflict"
+            message: "用户名已存在"

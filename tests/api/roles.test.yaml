@@ -1,0 +1,320 @@
+# 角色 API 测试用例
+# Skills Intelligence Hub - Phase 1 MVP
+
+metadata:
+  suite: roles
+  version: "1.0.0"
+  created: "2026-03-25"
+  author: "tester"
+
+test_cases:
+  TC-ROLE-001:
+    name: "获取角色列表"
+    priority: "P1"
+    endpoint: "/api/roles"
+    method: "GET"
+    description: "验证可以获取所有角色列表"
+    preconditions:
+      - "数据库中存在角色"
+    test_steps:
+      - step: 1
+        action: "获取角色列表"
+        request:
+          headers: {}
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+            items:
+              id: "{{role_id}}"
+              name: "{{role_name}}"
+              description: "{{role_description}}"
+
+  TC-ROLE-002:
+    name: "创建角色 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/roles"
+    method: "POST"
+    description: "验证创建角色需要 roles:create 权限"
+    preconditions:
+      - "管理员已登录"
+    test_steps:
+      - step: 1
+        action: "创建新角色"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          body:
+            name: "test-role-{{timestamp}}"
+            description: "测试角色"
+        expected:
+          status_code: 200
+          response:
+            name: "test-role-{{timestamp}}"
+            description: "测试角色"
+
+  TC-ROLE-003:
+    name: "创建角色 - 无权限"
+    priority: "P1"
+    endpoint: "/api/roles"
+    method: "POST"
+    description: "验证无权限用户无法创建角色"
+    preconditions:
+      - "普通用户已登录"
+    test_steps:
+      - step: 1
+        action: "尝试创建角色"
+        request:
+          headers:
+            Authorization: "Bearer {{normal_user_token}}"
+            Content-Type: "application/json"
+          body:
+            name: "hacker-role"
+            description: "尝试创建"
+        expected:
+          status_code: 403
+
+  TC-ROLE-004:
+    name: "创建角色 - 名称重复"
+    priority: "P2"
+    endpoint: "/api/roles"
+    method: "POST"
+    description: "验证角色名称不能重复"
+    preconditions:
+      - "管理员已登录"
+      - "角色 admin 已存在"
+    test_steps:
+      - step: 1
+        action: "尝试创建重复名称的角色"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          body:
+            name: "admin"
+            description: "重复的角色"
+        expected:
+          status_code: 409
+          response:
+            error: "Conflict"
+            message: "角色名称已存在"
+
+  TC-ROLE-005:
+    name: "获取角色详情"
+    priority: "P1"
+    endpoint: "/api/roles/{id}"
+    method: "GET"
+    description: "验证可以获取角色详情"
+    preconditions:
+      - "角色存在"
+    test_steps:
+      - step: 1
+        action: "获取角色详情"
+        request:
+          headers: {}
+          path_params:
+            id: "{{role_id}}"
+        expected:
+          status_code: 200
+          response:
+            id: "{{role_id}}"
+            name: "{{role_name}}"
+            description: "{{description}}"
+            permissions:
+              type: "array"
+
+  TC-ROLE-006:
+    name: "更新角色 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/roles/{id}"
+    method: "PUT"
+    description: "验证更新角色需要 roles:update 权限"
+    preconditions:
+      - "管理员已登录"
+      - "角色存在"
+    test_steps:
+      - step: 1
+        action: "更新角色"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{role_id}}"
+          body:
+            name: "updated-role-name"
+            description: "更新后的描述"
+        expected:
+          status_code: 200
+          response:
+            name: "updated-role-name"
+            description: "更新后的描述"
+
+  TC-ROLE-007:
+    name: "更新角色 - 无权限"
+    priority: "P1"
+    endpoint: "/api/roles/{id}"
+    method: "PUT"
+    description: "验证无权限用户无法更新角色"
+    preconditions:
+      - "普通用户已登录"
+    test_steps:
+      - step: 1
+        action: "尝试更新角色"
+        request:
+          headers:
+            Authorization: "Bearer {{normal_user_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{role_id}}"
+          body:
+            name: "hacked-role"
+        expected:
+          status_code: 403
+
+  TC-ROLE-008:
+    name: "删除角色 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/roles/{id}"
+    method: "DELETE"
+    description: "验证删除角色需要 roles:delete 权限"
+    preconditions:
+      - "管理员已登录"
+      - "角色存在且非系统角色"
+    test_steps:
+      - step: 1
+        action: "删除角色"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+          path_params:
+            id: "{{role_to_delete_id}}"
+        expected:
+          status_code: 204
+
+  TC-ROLE-009:
+    name: "删除角色 - 系统角色不可删除"
+    priority: "P2"
+    endpoint: "/api/roles/{id}"
+    method: "DELETE"
+    description: "验证系统角色不可删除"
+    preconditions:
+      - "管理员已登录"
+      - "角色为系统角色（如 admin）"
+    test_steps:
+      - step: 1
+        action: "尝试删除系统角色"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+          path_params:
+            id: "{{admin_role_id}}"
+        expected:
+          status_code: 404
+
+  TC-ROLE-010:
+    name: "获取角色权限列表"
+    priority: "P1"
+    endpoint: "/api/roles/{id}/permissions"
+    method: "GET"
+    description: "验证可以获取角色的权限列表"
+    preconditions:
+      - "角色存在"
+    test_steps:
+      - step: 1
+        action: "获取角色权限"
+        request:
+          headers: {}
+          path_params:
+            id: "{{role_id}}"
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+            items: "string"
+
+  TC-ROLE-011:
+    name: "为角色添加权限 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/roles/{id}/permissions"
+    method: "POST"
+    description: "验证为角色添加权限需要 roles:update 权限"
+    preconditions:
+      - "管理员已登录"
+      - "角色存在"
+      - "权限存在"
+    test_steps:
+      - step: 1
+        action: "添加权限到角色"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+            Content-Type: "application/json"
+          path_params:
+            id: "{{role_id}}"
+          body:
+            permission_id: "{{permission_id}}"
+        expected:
+          status_code: 204
+
+  TC-ROLE-012:
+    name: "移除角色权限 - 需要权限"
+    priority: "P1"
+    endpoint: "/api/roles/{id}/permissions/{permission_id}"
+    method: "DELETE"
+    description: "验证移除角色权限需要 roles:update 权限"
+    preconditions:
+      - "管理员已登录"
+      - "角色有该权限"
+    test_steps:
+      - step: 1
+        action: "移除角色权限"
+        request:
+          headers:
+            Authorization: "Bearer {{admin_token}}"
+          path_params:
+            id: "{{role_id}}"
+            permission_id: "{{permission_id}}"
+        expected:
+          status_code: 204
+
+  TC-ROLE-013:
+    name: "获取所有权限列表"
+    priority: "P1"
+    endpoint: "/api/permissions"
+    method: "GET"
+    description: "验证可以获取所有权限列表"
+    preconditions:
+      - "数据库中存在权限"
+    test_steps:
+      - step: 1
+        action: "获取权限列表"
+        request:
+          headers: {}
+        expected:
+          status_code: 200
+          response:
+            type: "array"
+            items:
+              id: "{{permission_id}}"
+              name: "{{permission_name}}"
+              resource: "{{resource}}"
+              action: "{{action}}"
+
+  TC-ROLE-014:
+    name: "获取角色详情 - 不存在"
+    priority: "P2"
+    endpoint: "/api/roles/{id}"
+    method: "GET"
+    description: "验证获取不存在的角色返回 404"
+    preconditions: []
+    test_steps:
+      - step: 1
+        action: "获取不存在的角色"
+        request:
+          headers: {}
+          path_params:
+            id: "00000000-0000-0000-0000-000000000000"
+        expected:
+          status_code: 404
