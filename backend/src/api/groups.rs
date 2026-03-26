@@ -36,12 +36,12 @@ pub fn routes() -> Router<AppState> {
         // 用户组管理
         .route("/groups", get(list_groups).post(create_group))
         .route("/groups/tree", get(get_group_tree))
-        .route("/groups/{id}", get(get_group).put(update_group).delete(delete_group))
+        .route("/groups/:id", get(get_group).put(update_group).delete(delete_group))
         // 用户组成员管理
-        .route("/groups/{id}/members", get(get_group_members).post(add_member))
-        .route("/groups/{id}/members/{user_id}", delete(remove_member))
+        .route("/groups/:id/members", get(get_group_members).post(add_member))
+        .route("/groups/:id/members/:user_id", delete(remove_member))
         // 用户所属组
-        .route("/users/{id}/groups", get(get_user_groups))
+        .route("/users/:id/groups", get(get_user_groups))
 }
 
 /// 获取用户组列表

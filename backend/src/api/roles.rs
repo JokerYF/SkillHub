@@ -27,10 +27,10 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         // 角色管理
         .route("/roles", get(list_roles).post(create_role))
-        .route("/roles/{id}", get(get_role).put(update_role).delete(delete_role))
+        .route("/roles/:id", get(get_role).put(update_role).delete(delete_role))
         // 角色权限管理
-        .route("/roles/{id}/permissions", get(get_role_permissions).post(add_permission))
-        .route("/roles/{id}/permissions/{permission_id}", delete(remove_permission))
+        .route("/roles/:id/permissions", get(get_role_permissions).post(add_permission))
+        .route("/roles/:id/permissions/:permission_id", delete(remove_permission))
         // 权限列表
         .route("/permissions", get(list_permissions))
 }

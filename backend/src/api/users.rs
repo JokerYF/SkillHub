@@ -63,10 +63,10 @@ pub fn routes() -> Router<AppState> {
         .route("/users/me/skills", get(get_my_skills))
         // 用户管理（管理员）
         .route("/users", get(list_users))
-        .route("/users/{id}", get(get_user).put(update_user).delete(delete_user))
+        .route("/users/:id", get(get_user).put(update_user).delete(delete_user))
         // 用户角色管理
-        .route("/users/{id}/roles", get(get_user_roles).post(assign_role))
-        .route("/users/{id}/roles/{role}", delete(remove_role))
+        .route("/users/:id/roles", get(get_user_roles).post(assign_role))
+        .route("/users/:id/roles/:role", delete(remove_role))
 }
 
 /// 从 Header 获取当前用户
