@@ -19,11 +19,19 @@ pub struct RegisterRequest {
     pub password: String,
 }
 
+/// 修改密码请求
+#[derive(Debug, Deserialize)]
+pub struct ChangePasswordRequest {
+    pub old_password: String,
+    pub new_password: String,
+}
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/auth/register", post(register))
         .route("/auth/login", post(login))
         .route("/auth/refresh", post(refresh))
+        .route("/auth/change-password", post(change_password))
         .route("/health", get(health))
 }
 
@@ -81,4 +89,25 @@ pub async fn refresh(
     let token = service.refresh_token(user.id).await?;
 
     Ok(Json(serde_json::json!({ "token": token })))
+}
+
+/// 修改密码
+pub async fn change_password(
+    State(state): State<AppState>,
+    AuthUser(user): AuthUser,
+    Json(payload): Json<ChangePasswordRequest>,
+) -> Result<StatusCode, ApiError> {
+    let service = AuthService::new(state.db, state.jwt_secret, 24);
+
+    // 验证输入
+    if payload.old_password.is_empty() {
+        return Err(ApiError::BadRequest("请输入当前密码".into()));
+    }
+    if payload.new_password.is_empty() {
+        return Err(ApiError::BadRequest("请输入新密码".into()));
+    }
+
+    service.change_password(user.id, &payload.old_password, &payload.new_password).await?;
+
+    Ok(StatusCode::NO_CONTENT)
 }

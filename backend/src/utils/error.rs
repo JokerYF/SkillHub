@@ -35,7 +35,7 @@ fn determine_bad_request_code(msg: &str) -> &'static str {
     } else if msg_lower.contains("用户名") || msg_lower.contains("username") {
         "USERNAME_TAKEN"
     } else if msg_lower.contains("密码") || msg_lower.contains("password") {
-        "INVALID_CREDENTIALS"
+        "INVALID_PASSWORD"
     } else {
         "BAD_REQUEST"
     }

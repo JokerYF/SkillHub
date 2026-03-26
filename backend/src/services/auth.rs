@@ -164,6 +164,59 @@ impl AuthService {
 
         Ok(token)
     }
+
+    /// 修改用户密码
+    pub async fn change_password(&self, user_id: uuid::Uuid, old_password: &str, new_password: &str) -> Result<()> {
+        debug!(user_id = %user_id, "Processing password change request");
+
+        // 查找用户
+        let user = self.user_repo
+            .find_by_id(user_id)
+            .await?
+            .ok_or_else(|| {
+                warn!(user_id = %user_id, "Password change failed: user not found");
+                anyhow!("用户不存在")
+            })?;
+
+        // 检查用户是否激活
+        if !user.is_active {
+            warn!(user_id = %user_id, "Password change failed: account disabled");
+            return Err(anyhow!("账户已被禁用"));
+        }
+
+        // 验证旧密码
+        debug!(user_id = %user_id, "Verifying old password");
+        let valid = verify_password(old_password, &user.password_hash)?;
+        if !valid {
+            warn!(user_id = %user_id, "Password change failed: invalid old password");
+            return Err(anyhow!("当前密码错误"));
+        }
+
+        // 验证新密码长度
+        if new_password.len() < 8 {
+            return Err(anyhow!("新密码长度至少为 8 位"));
+        }
+
+        // 检查新密码不能与旧密码相同
+        if old_password == new_password {
+            return Err(anyhow!("新密码不能与当前密码相同"));
+        }
+
+        // 哈希新密码
+        debug!(user_id = %user_id, "Hashing new password");
+        let password_hash = hash_password(new_password)?;
+
+        // 更新密码
+        let updated = self.user_repo.update_password(user_id, &password_hash).await?;
+        if !updated {
+            warn!(user_id = %user_id, "Password change failed: update failed");
+            return Err(anyhow!("密码更新失败"));
+        }
+
+        info!(user_id = %user_id, "Password changed successfully");
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]

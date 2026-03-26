@@ -6,6 +6,7 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { updateUser, type UpdateUserRequest } from '@/api/users'
+import { changePassword as changePasswordApi } from '@/api/auth'
 import AppLayout from '@/design-system/layouts/AppLayout.vue'
 
 const { t } = useI18n()
@@ -115,17 +116,13 @@ async function changePassword() {
   passwordError.value = ''
 
   try {
-    // TODO: 调用后端修改密码 API
-    // await changePassword({
-    //   old_password: passwordForm.value.oldPassword,
-    //   new_password: passwordForm.value.newPassword,
-    // })
-
-    // 临时提示：后端 API 未实现
-    passwordError.value = '修改密码功能暂未实现，请联系后端开发'
+    await changePasswordApi({
+      old_password: passwordForm.value.oldPassword,
+      new_password: passwordForm.value.newPassword,
+    })
 
     // 成功后关闭弹窗
-    // showPasswordModal.value = false
+    showPasswordModal.value = false
   } catch (e: any) {
     passwordError.value = e.response?.data?.error || '修改密码失败'
   } finally {

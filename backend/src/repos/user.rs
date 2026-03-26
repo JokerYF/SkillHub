@@ -155,4 +155,17 @@ impl UserRepo {
 
         Ok(result.rows_affected() > 0)
     }
+
+    /// 更新用户密码
+    pub async fn update_password(&self, id: Uuid, password_hash: &str) -> Result<bool> {
+        let result = sqlx::query(
+            "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2"
+        )
+        .bind(password_hash)
+        .bind(id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(result.rows_affected() > 0)
+    }
 }

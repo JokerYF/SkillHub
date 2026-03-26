@@ -15,6 +15,11 @@ export interface AuthResponse {
   token: string
 }
 
+export interface ChangePasswordRequest {
+  old_password: string
+  new_password: string
+}
+
 export async function login(data: LoginRequest): Promise<string> {
   const response = await api.post<AuthResponse>('/auth/login', data)
   return response.data.token
@@ -22,4 +27,12 @@ export async function login(data: LoginRequest): Promise<string> {
 
 export async function register(data: RegisterRequest): Promise<void> {
   await api.post('/auth/register', data)
+}
+
+/**
+ * 修改密码
+ * @param data - 包含旧密码和新密码
+ */
+export async function changePassword(data: ChangePasswordRequest): Promise<void> {
+  await api.post('/auth/change-password', data)
 }
