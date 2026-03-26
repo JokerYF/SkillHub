@@ -148,3 +148,70 @@ export async function listMySkills(): Promise<Skill[]> {
   const { data } = await api.get<Skill[]>('/users/me/skills')
   return data
 }
+
+/**
+ * 技能 Manifest 信息
+ */
+export interface SkillManifest {
+  id: string
+  name: string
+  slug: string
+  version: string
+  description?: string
+  author?: string
+  tags: string[]
+  visibility: 'public' | 'company' | 'department' | 'private'
+  extends?: string
+  composes: string[]
+  files: Array<{
+    name: string
+    size: number
+    digest: string
+  }>
+}
+
+/**
+ * 获取技能的 Manifest 信息
+ * @param slug - 技能 slug
+ * @returns Manifest 信息
+ */
+export async function getSkillManifest(slug: string): Promise<SkillManifest> {
+  const { data } = await api.get<SkillManifest>(`/skills/${slug}/manifest`)
+  return data
+}
+
+/**
+ * 上传技能版本请求
+ */
+export interface UploadVersionRequest {
+  version: string
+  file: File
+  changelog?: string
+}
+
+/**
+ * 通过文件上传创建技能版本
+ * @param slug - 技能 slug
+ * @param request - 上传请求
+ * @returns 创建的版本信息
+ */
+export async function uploadSkillVersion(
+  slug: string,
+  request: UploadVersionRequest
+): Promise<SkillVersion> {
+  const formData = new FormData()
+  formData.append('version', request.version)
+  formData.append('file', request.file)
+  if (request.changelog) {
+    formData.append('changelog', request.changelog)
+  }
+
+  const { data } = await api.post<SkillVersion>(
+    `/skills/${slug}/versions/upload`,
+    formData,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }
+  )
+  return data
+}

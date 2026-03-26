@@ -60,3 +60,24 @@ export async function assignRole(userId: string, roleName: string): Promise<void
 export async function removeRole(userId: string, roleName: string): Promise<void> {
   await api.delete(`/users/${userId}/roles/${roleName}`)
 }
+
+/**
+ * 用户所属组信息
+ */
+export interface UserGroup {
+  id: string
+  name: string
+  description?: string
+  parent_id: string | null
+  is_primary: boolean
+}
+
+/**
+ * 获取用户所属的用户组列表
+ * @param userId - 用户 ID
+ * @returns 用户所属组列表
+ */
+export async function getUserGroups(userId: string): Promise<UserGroup[]> {
+  const { data } = await api.get<UserGroup[]>(`/users/${userId}/groups`)
+  return data
+}

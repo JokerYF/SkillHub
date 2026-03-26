@@ -1,5 +1,13 @@
 import { api } from './index'
 
+export interface Permission {
+  id: string
+  name: string
+  description?: string
+  resource: string
+  action: string
+}
+
 export interface Role {
   id: string
   name: string
@@ -44,4 +52,41 @@ export async function updateRole(id: string, role: UpdateRoleRequest): Promise<R
 
 export async function deleteRole(id: string): Promise<void> {
   await api.delete(`/roles/${id}`)
+}
+
+/**
+ * 获取所有权限列表
+ * @returns 权限列表
+ */
+export async function listPermissions(): Promise<Permission[]> {
+  const { data } = await api.get<Permission[]>('/permissions')
+  return data
+}
+
+/**
+ * 获取角色的权限名称列表
+ * @param roleId - 角色 ID
+ * @returns 权限名称列表
+ */
+export async function getRolePermissions(roleId: string): Promise<string[]> {
+  const { data } = await api.get<string[]>(`/roles/${roleId}/permissions`)
+  return data
+}
+
+/**
+ * 为角色添加权限
+ * @param roleId - 角色 ID
+ * @param permissionId - 权限 ID
+ */
+export async function addRolePermission(roleId: string, permissionId: string): Promise<void> {
+  await api.post(`/roles/${roleId}/permissions`, { permission_id: permissionId })
+}
+
+/**
+ * 从角色移除权限
+ * @param roleId - 角色 ID
+ * @param permissionId - 权限 ID
+ */
+export async function removeRolePermission(roleId: string, permissionId: string): Promise<void> {
+  await api.delete(`/roles/${roleId}/permissions/${permissionId}`)
 }

@@ -36,3 +36,13 @@ export async function register(data: RegisterRequest): Promise<void> {
 export async function changePassword(data: ChangePasswordRequest): Promise<void> {
   await api.post('/auth/change-password', data)
 }
+
+/**
+ * 刷新 Token
+ * 使用当前有效的 Token 获取新的 Token
+ * @returns 新的 JWT Token
+ */
+export async function refreshToken(): Promise<string> {
+  const response = await api.post<AuthResponse>('/auth/refresh')
+  return response.data.token
+}
