@@ -389,7 +389,7 @@ onMounted(() => {
             </div>
 
             <!-- 标签 -->
-            <div>
+            <div v-if="manifest.tags && Array.isArray(manifest.tags) && manifest.tags.length > 0">
               <span class="text-sm text-neutral-500">{{ t('skill.manifestTags') }}</span>
               <div class="flex flex-wrap gap-1 mt-1">
                 <span
@@ -403,13 +403,13 @@ onMounted(() => {
             </div>
 
             <!-- 继承/组合 -->
-            <div v-if="manifest.extends || manifest.composes.length > 0">
+            <div v-if="manifest.extends || (manifest.composes && manifest.composes.length > 0)">
               <span class="text-sm text-neutral-500">{{ t('skill.manifestDependencies') }}</span>
               <div class="mt-1 space-y-1">
                 <p v-if="manifest.extends" class="text-sm">
                   <span class="text-neutral-400">extends:</span> {{ manifest.extends }}
                 </p>
-                <p v-if="manifest.composes.length > 0" class="text-sm">
+                <p v-if="manifest.composes && manifest.composes.length > 0" class="text-sm">
                   <span class="text-neutral-400">composes:</span> {{ manifest.composes.join(', ') }}
                 </p>
               </div>

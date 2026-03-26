@@ -10,6 +10,7 @@ export default {
     loading: 'Loading...',
     retry: 'Retry',
     cancel: 'Cancel',
+    close: 'Close',
     confirm: 'Confirm',
     save: 'Save',
     delete: 'Delete',
