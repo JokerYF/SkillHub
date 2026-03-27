@@ -1,19 +1,23 @@
-# 本地测试环境
-# 只启动 skillhub 服务，连接云端数据库
-# 使用方式: docker compose -f compose.test.yml --env-file .env.test up -d
+# Skills Hub 本地构建测试配置
+# 从 Dockerfile 本地构建镜像
+# 环境变量通过 .env 文件加载
+# 使用方式: docker compose -f docker-compose-build.yml --env-file .env up -d --build
 
 services:
   skillhub:
     build:
       context: ../..
       dockerfile: Dockerfile
-    image: skillhub:test
-    container_name: skills-hub-test
+    image: skillhub:local
+    container_name: skills-hub-build
     restart: unless-stopped
     env_file:
-      - ../../.env.test
+      - .env
     ports:
-      - "8080:8080"
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      - RUST_LOG=${RUST_LOG:-debug}
+      - RUN_MODE=${RUN_MODE:-dev}
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/health"]
       interval: 30s

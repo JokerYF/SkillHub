@@ -1,0 +1,30 @@
+# Skills Hub 开发测试环境配置
+# 仅包含 skillhub 服务，连接外部数据库
+# 环境变量通过 .env 文件加载
+# 使用方式: docker compose -f docker-compose-dev.yml --env-file .env up -d
+
+services:
+  skillhub:
+    image: swr.cn-north-4.myhuaweicloud.com/skillhub/skillhub:${IMAGE_TAG:-dev-latest}
+    container_name: skills-hub-dev
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      - RUST_LOG=${RUST_LOG:-debug}
+      - RUN_MODE=${RUN_MODE:-dev}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
