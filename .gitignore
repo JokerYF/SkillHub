@@ -66,6 +66,7 @@ Thumbs.db
 .env.production
 .env.development
 docker-compose/.env
+docker-compose/.env-local
 *.pem
 *.key
 secrets/
