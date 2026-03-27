@@ -44,8 +44,12 @@ show_help() {
     echo "  $0 <env> <action> [version]"
     echo ""
     echo "环境:"
-    echo "  dev   - 开发环境"
-    echo "  prod  - 生产环境"
+    echo "  dev   - 开发环境部署 (从镜像拉取)"
+    echo "  prod  - 生产环境部署 (从镜像拉取)"
+    echo ""
+    echo "本地开发:"
+    echo "  cd docker/compose && docker compose -f compose.yml up -d      # 本地开发环境"
+    echo "  cd docker/compose && docker compose -f compose.test.yml up -d # 本地测试环境"
     echo ""
     echo "操作:"
     echo "  up       - 启动服务"
@@ -144,10 +148,10 @@ check_env_file() {
     return 0
 }
 
-# 获取 compose 文件列表
-get_compose_files() {
+# 获取 compose 文件路径
+get_compose_file() {
     local env=$1
-    echo "-f $COMPOSE_DIR/docker-compose.base.yml -f $COMPOSE_DIR/docker-compose.$env.yml"
+    echo "-f $COMPOSE_DIR/compose.$env.yml"
 }
 
 # 启动服务
@@ -171,13 +175,13 @@ do_up() {
         return 1
     fi
 
-    local compose_files=$(get_compose_files "$env")
+    local compose_file=$(get_compose_file "$env")
 
     log_info "拉取最新镜像..."
-    docker compose $compose_files pull skillhub 2>/dev/null || true
+    docker compose $compose_file pull skillhub 2>/dev/null || true
 
     log_info "启动服务..."
-    docker compose $compose_files --env-file "$PROJECT_ROOT/.env.$env" up -d
+    docker compose $compose_file --env-file "$PROJECT_ROOT/.env.$env" up -d
 
     log_success "服务已启动"
     show_status "$env"
@@ -189,8 +193,8 @@ do_down() {
 
     log_info "停止 $env 环境服务..."
 
-    local compose_files=$(get_compose_files "$env")
-    docker compose $compose_files down
+    local compose_file=$(get_compose_file "$env")
+    docker compose $compose_file down
 
     log_success "服务已停止"
 }
@@ -225,8 +229,8 @@ show_status() {
     echo "=== 服务状态 ==="
     echo ""
 
-    local compose_files=$(get_compose_files "$env")
-    docker compose $compose_files ps
+    local compose_file=$(get_compose_file "$env")
+    docker compose $compose_file ps
 
     echo ""
     echo "=== 容器健康状态 ==="

@@ -1,0 +1,29 @@
+# 本地测试环境
+# 只启动 skillhub 服务，连接云端数据库
+# 使用方式: docker compose -f compose.test.yml --env-file .env.test up -d
+
+services:
+  skillhub:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: skillhub:test
+    container_name: skills-hub-test
+    restart: unless-stopped
+    env_file:
+      - ../../.env.test
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

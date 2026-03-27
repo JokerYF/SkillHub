@@ -1,17 +1,19 @@
-version: '3.8'
+# Dev 环境部署配置
+# 从镜像拉取，包含 postgres、redis
+# 使用方式: ./deploy.sh dev up
 
 services:
-  # 统一服务：前端 + 后端合并到一个容器
   skillhub:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: skills-hub
+    image: ${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/${IMAGE_NAME}:${IMAGE_TAG:-dev-latest}
+    container_name: skills-hub-dev
     restart: unless-stopped
     env_file:
-      - .env.local
+      - ../../.env.dev
     ports:
       - "8080:8080"
+    environment:
+      - RUST_LOG=debug
+      - RUN_MODE=dev
     depends_on:
       postgres:
         condition: service_healthy
@@ -31,31 +33,31 @@ services:
 
   postgres:
     image: postgres:15-alpine
-    container_name: skills-hub-postgres
+    container_name: skills-hub-dev-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: skillhub
-      POSTGRES_PASSWORD: skillhub123
-      POSTGRES_DB: skillhub
+      POSTGRES_USER: ${POSTGRES_USER:-skillhub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-skillhub123}
+      POSTGRES_DB: ${POSTGRES_DB:-skillhub}
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U skillhub -d skillhub"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-skillhub} -d ${POSTGRES_DB:-skillhub}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis:
     image: redis:7-alpine
-    container_name: skills-hub-redis
+    container_name: skills-hub-dev-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - redis_dev_data:/data
 
 volumes:
-  postgres_data:
-  redis_data:
+  postgres_dev_data:
+  redis_dev_data:
