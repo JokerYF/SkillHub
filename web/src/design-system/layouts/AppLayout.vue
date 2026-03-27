@@ -297,11 +297,21 @@ onMounted(async () => {
           </svg>
 
           <!-- 标签文字 -->
-          <span v-if="!sidebarCollapsed" class="ml-3">{{ item.label }}</span>
+          <span
+            :class="[
+              'ml-3 whitespace-nowrap transition-opacity duration-200',
+              sidebarCollapsed ? 'opacity-0 delay-0' : 'opacity-100 delay-150'
+            ]"
+          >{{ item.label }}</span>
         </router-link>
 
         <!-- Admin 二级菜单 -->
-        <div v-if="isAdminRoute && !sidebarCollapsed" class="ml-6 mt-2 space-y-1 border-l border-neutral-200 pl-3">
+        <div
+          :class="[
+            'ml-6 mt-2 space-y-1 border-l border-neutral-200 pl-3 transition-opacity duration-200',
+            (isAdminRoute && !sidebarCollapsed) ? 'opacity-100 delay-150' : 'opacity-0 delay-0'
+          ]"
+        >
           <router-link
             v-for="subItem in adminSubItems"
             :key="subItem.name"
