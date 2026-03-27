@@ -1,7 +1,7 @@
 # Skills Hub 生产环境部署配置
-# 包含完整服务栈：skillhub + postgres + redis + minio
+# 包含完整服务栈：skillhub + postgres + redis + rustfs
 # 环境变量通过 .env 文件加载
-# 使用方式: ./init.sh && docker compose up -d
+# 使用方式: ./install.sh && docker compose up -d
 
 services:
   skillhub:
@@ -22,12 +22,12 @@ services:
       # JWT 配置
       - JWT_EXPIRATION=86400
       # 存储配置
-      - STORAGE_TYPE=minio
-      - STORAGE_ENDPOINT=http://minio:9000
+      - STORAGE_ENDPOINT=http://rustfs:9000
       - STORAGE_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - STORAGE_SECRET_KEY=${MINIO_SECRET_KEY}
       - STORAGE_BUCKET=skillhub
       # CORS 配置 (生产模式使用 CORS_ORIGINS 白名单)
+      - CORS_ORIGINS=${CORS_ORIGINS}
       # 其他配置
       - MAX_UPLOAD_SIZE=100
     ports:
@@ -37,8 +37,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      minio:
-        condition: service_started
+      rustfs:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/health"]
       interval: 15s
@@ -99,21 +99,25 @@ services:
           cpus: '0.25'
           memory: 128M
 
-  minio:
-    image: minio/minio:latest
-    container_name: skills-hub-minio
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: skills-hub-rustfs
     restart: unless-stopped
     env_file:
       - .env
     environment:
-      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
-      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
-    command: server /data --console-address ":9001"
+      - RUSTFS_DATA_DIR=/data
+      - RUSTFS_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - RUSTFS_SECRET_KEY=${MINIO_SECRET_KEY}
     volumes:
-      - minio_data:/data
+      - rustfs_data:/data
     ports:
-      - "${MINIO_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "${RUSTFS_PORT:-9000}:9000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
     deploy:
       resources:
         limits:
@@ -126,4 +130,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  minio_data:
+  rustfs_data:
