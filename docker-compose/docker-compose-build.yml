@@ -6,7 +6,7 @@
 services:
   skillhub:
     build:
-      context: ../..
+      context: ..
       dockerfile: Dockerfile
     image: skillhub:local
     container_name: skills-hub-build
