@@ -8,10 +8,10 @@ on:
 env:
   # 华为云镜像仓库地址
   REGISTRY: swr.cn-north-4.myhuaweicloud.com
-  # 镜像命名空间
-  NAMESPACE: skills-hub
+  # 镜像命名空间（华为云 SWR 组织名）
+  NAMESPACE: skillhub
   # 镜像名称
-  IMAGE_NAME: skills-hub
+  IMAGE_NAME: skillhub
 
 jobs:
   build-and-push:
